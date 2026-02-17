@@ -1,0 +1,5 @@
+# Project Rules
+
+## Documentation
+- **Always maintain a file called `STATUS.md` in the root folder.**
+- Every time you complete a task, update `STATUS.md` with a one-sentence summary of what changed.

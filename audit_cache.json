@@ -1,0 +1,34 @@
+{
+    "6b3c3ecc2e50fc5059bd461e8ca75b19401894f37e7acfe2011aa07706aee569": {
+        "timestamp": 1771339444.1658044,
+        "result": {
+            "vera_score": 88,
+            "warnings": [
+                "Test Warning"
+            ]
+        }
+    },
+    "091c911f5286a37b8fd3b548c1f80cb43e01356f9295a006ad0bbb878d70b94a": {
+        "timestamp": 1771339529.7397316,
+        "result": {
+            "vera_score": 55,
+            "warnings": [
+                "TRIAGE: Contract size too small (Likely incomplete or proxy)",
+                "DETECTED: Legacy Math Overflow"
+            ],
+            "note": "Audit based on Verified Intelligence | Hunter Deep Analysis Triggered"
+        }
+    },
+    "43dab254c94ea40a85752e2379472a8700e90152e6daf526075bb701903da3f4": {
+        "timestamp": 1771339529.7461553,
+        "result": {
+            "vera_score": 0,
+            "warnings": [
+                "TRIAGE: Contract size too small (Likely incomplete or proxy)",
+                "DETECTED: UUPS Silent Death (Signature B)",
+                "DETECTED: Legacy Math Overflow"
+            ],
+            "note": "Audit based on Verified Intelligence | Hunter Deep Analysis Triggered"
+        }
+    }
+}
