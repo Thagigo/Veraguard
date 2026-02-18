@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import SecurityScore from './components/SecurityScore'
+import TreasuryView from './components/TreasuryView'
+import AuditFeed from './components/AuditFeed'
 import WebApp from '@twa-dev/sdk'
 import './App.css'
 
@@ -11,12 +13,17 @@ function App() {
   const [warnings, setWarnings] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
 
-  // User/Credit State
+  // User/Credit/Fee State
   const [userId, setUserId] = useState<string>('')
   const [credits, setCredits] = useState<number>(0)
   const [paying, setPaying] = useState(false)
+  const [dynamicFee, setDynamicFee] = useState<string>('0.001')
 
-  // Initialize Telegram & User
+  // Deep Dive State
+  const [showDeepDiveModal, setShowDeepDiveModal] = useState(false)
+  const [pendingDeepDiveAddress, setPendingDeepDiveAddress] = useState<string | null>(null)
+
+  // Initialize Telegram & User & Fee
   useEffect(() => {
     // expansive mode
     WebApp.expand();
@@ -37,6 +44,7 @@ function App() {
 
     setUserId(currentUserId);
     fetchCredits(currentUserId);
+    fetchFee();
 
   }, [])
 
@@ -52,7 +60,19 @@ function App() {
     }
   }
 
-  const handlePayment = useCallback(async () => {
+  const fetchFee = async () => {
+    try {
+      const res = await fetch('http://localhost:8000/api/fee')
+      if (res.ok) {
+        const data = await res.json()
+        setDynamicFee(String(data.fee))
+      }
+    } catch (e) {
+      console.error("Failed to fetch fee", e)
+    }
+  }
+
+  const handlePayment = useCallback(async (amount: number = 1) => {
     WebApp.MainButton.showProgress(false);
     setPaying(true);
     setError(null);
@@ -63,7 +83,7 @@ function App() {
       const response = await fetch('http://localhost:8000/api/pay', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tx_hash: mockTxHash, user_id: userId }),
+        body: JSON.stringify({ tx_hash: mockTxHash, user_id: userId, credits: amount }),
       })
 
       if (!response.ok) throw new Error('Payment verification failed')
@@ -81,9 +101,15 @@ function App() {
     }
   }, [userId]);
 
-  const handleAudit = useCallback(async (e?: React.FormEvent) => {
+  const handleAudit = useCallback(async (e?: React.FormEvent, confirmDeepDive: boolean = false) => {
     if (e) e.preventDefault();
-    if (!address) return;
+    if (!address && !confirmDeepDive) return;
+
+    // For Deep Dive re-trigger, we might not have 'address' from state if cleared, 
+    // but typically we keep it using 'pendingDeepDiveAddress' logic if we want.
+    // However, here we just use 'address' state.
+    const targetAddress = confirmDeepDive && pendingDeepDiveAddress ? pendingDeepDiveAddress : address;
+
     WebApp.MainButton.showProgress(false);
     WebApp.MainButton.showProgress(true);
 
@@ -91,20 +117,38 @@ function App() {
     setError(null);
     setScore(null);
     setWarnings([]);
+    setShowDeepDiveModal(false);
 
     try {
-      // Call the local FastAPI backend with user_id
       const response = await fetch('http://localhost:8000/api/audit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address, user_id: userId }),
+        body: JSON.stringify({
+          address: targetAddress,
+          user_id: userId,
+          confirm_deep_dive: confirmDeepDive
+        }),
       })
 
       if (response.status === 402) {
-        throw new Error("Insufficient credits. Payment required.")
+        throw new Error("Insufficient credits. Please purchase more.")
+      }
+
+      if (response.status === 503) {
+        throw new Error("Security Vault Insolvent. Audit halted for safety.")
       }
 
       const data = await response.json()
+
+      // Handle Tiered Pricing Confirmation
+      if (data.status === "requires_approval") {
+        setPendingDeepDiveAddress(targetAddress);
+        setShowDeepDiveModal(true);
+        setAnalyzing(false);
+        WebApp.MainButton.hideProgress();
+        WebApp.HapticFeedback.notificationOccurred('warning');
+        return;
+      }
 
       if (data.error) {
         setError(data.error)
@@ -112,7 +156,6 @@ function App() {
       } else {
         setScore(data.vera_score)
         setWarnings(data.warnings || [])
-        // Refresh credits after spend
         fetchCredits(userId)
         WebApp.HapticFeedback.notificationOccurred('success');
       }
@@ -121,23 +164,34 @@ function App() {
       setError(err.message || "Something went wrong. Is the backend running?")
       WebApp.HapticFeedback.notificationOccurred('error');
     } finally {
-      setAnalyzing(false);
-      WebApp.MainButton.hideProgress();
+      // If we showed the modal, we already stopped analyzing. 
+      // Only stop if we are NOT showing the modal (i.e. finished or errored out)
+      // Actually we setAnalyzing(false) inside the modal block, so this is safe if we guard it?
+      // But 'finally' runs anyway.
+      // Let's rely on the state check.
+      if (!showDeepDiveModal) {
+        // But wait, showDeepDiveModal state update isn't immediate in this closure?
+        // True. But we returned early in that block. 
+        // So this finally block ONLY runs if we didn't return early.
+        setAnalyzing(false);
+        WebApp.MainButton.hideProgress();
+      }
     }
-  }, [address, userId]);
+  }, [address, userId, pendingDeepDiveAddress, showDeepDiveModal]);
+
 
   // Sync MainButton State
   useEffect(() => {
     const mainButton = WebApp.MainButton;
 
     if (credits < 1) {
-      mainButton.setText(`PAY 0.001 ETH TO AUDIT`);
+      mainButton.setText(`PAY ${dynamicFee} ETH (1 Credit)`);
       mainButton.show();
-      mainButton.onClick(handlePayment);
+      mainButton.onClick(() => handlePayment(1));
     } else if (address) {
       mainButton.setText("AUDIT CONTRACT");
       mainButton.show();
-      mainButton.onClick(handleAudit);
+      mainButton.onClick(() => handleAudit());
     } else {
       mainButton.hide();
     }
@@ -146,7 +200,7 @@ function App() {
       mainButton.offClick(handlePayment);
       mainButton.offClick(handleAudit);
     };
-  }, [credits, address, handleAudit, handlePayment]);
+  }, [credits, address, handleAudit, handlePayment, dynamicFee]);
 
 
   return (
@@ -158,65 +212,111 @@ function App() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 pb-32">
 
-        {/* Input Section */}
+        {/* Input / Payment Section */}
         <div className="max-w-xl mx-auto mb-12">
 
           {credits < 1 ? (
             <div className="text-center p-8 rounded-xl shadow-sm border" style={{ backgroundColor: 'var(--tg-theme-secondary-bg-color)', borderColor: 'var(--tg-theme-hint-color)' }}>
               <h2 className="text-xl font-bold mb-2">Audit Credits Required</h2>
-              <p className="mb-6 opacity-70">1 Credit = 1 Medical-Grade Audit</p>
               <div className="p-4 rounded-lg mb-6 border opacity-80" style={{ borderColor: 'var(--tg-theme-hint-color)' }}>
-                <p className="text-xs uppercase tracking-wider font-semibold mb-1">Cost</p>
-                <p className="text-2xl font-mono font-bold">0.001 ETH</p>
+                <p className="text-xs uppercase tracking-wider font-semibold mb-1">Dynamic Cost (1 Credit)</p>
+                <p className="text-2xl font-mono font-bold">{dynamicFee} ETH</p>
               </div>
-              {/* Fallback button if MainButton fails or for desktop testing */}
-              <button
-                onClick={handlePayment}
-                disabled={paying}
-                className="w-full py-4 bg-emerald-500 text-white font-bold rounded-lg hover:bg-emerald-600 transition-all disabled:opacity-70"
-              >
-                {paying ? 'Processing...' : 'Pay & Add Credit'}
-              </button>
+
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                <button onClick={() => handlePayment(1)} disabled={paying} className="py-3 bg-emerald-500 text-white font-bold rounded hover:bg-emerald-600 disabled:opacity-50">
+                  1 Credit
+                </button>
+                <button onClick={() => handlePayment(10)} disabled={paying} className="py-3 bg-emerald-600 text-white font-bold rounded hover:bg-emerald-700 disabled:opacity-50 relative overflow-hidden">
+                  <span className="relative z-10">10 Pack</span>
+                  <div className="absolute inset-0 bg-white/10 skew-x-12 -ml-4"></div>
+                </button>
+                <button onClick={() => handlePayment(50)} disabled={paying} className="py-3 bg-slate-800 text-white font-bold rounded hover:bg-slate-900 disabled:opacity-50 border border-emerald-500/50">
+                  50 Pack
+                </button>
+              </div>
+              <p className="text-xs opacity-50">{paying ? "Processing Transaction..." : "Select a Bundle"}</p>
             </div>
           ) : (
-            <div className="flex gap-4">
-              <input
-                type="text"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="Enter Contract Address (e.g., 0x...)"
-                className="flex-1 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-sm shadow-sm"
-                style={{ backgroundColor: 'var(--tg-theme-bg-color)', color: 'var(--tg-theme-text-color)', borderColor: 'var(--tg-theme-hint-color)' }}
-              />
-              {/* Hide Audit button on mobile if using MainButton, but keep for hybrid/desktop */}
-              <button
-                onClick={() => handleAudit({ preventDefault: () => { } } as React.FormEvent)}
-                disabled={analyzing || !address}
-                className="px-6 py-3 bg-slate-900 text-white font-semibold rounded-lg disabled:opacity-50 hidden sm:block"
-              >
-                {analyzing ? 'Scanning...' : 'Audit'}
-              </button>
-            </div>
+            <>
+              <div className="flex gap-4">
+                <input
+                  type="text"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="Enter Contract Address (e.g., 0x...)"
+                  className="flex-1 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-sm shadow-sm"
+                  style={{ backgroundColor: 'var(--tg-theme-bg-color)', color: 'var(--tg-theme-text-color)', borderColor: 'var(--tg-theme-hint-color)' }}
+                />
+                <button
+                  onClick={() => handleAudit()}
+                  disabled={analyzing || !address}
+                  className="px-6 py-3 bg-slate-900 text-white font-semibold rounded-lg disabled:opacity-50 hidden sm:block"
+                >
+                  {analyzing ? 'Scanning...' : 'Audit'}
+                </button>
+              </div>
+            </>
           )}
 
           {error && <p className="mt-4 text-red-500 text-center font-medium p-2 rounded border border-red-100">{error}</p>}
         </div>
 
+        {/* Audit Feed (Loader) */}
+        {analyzing && (
+          <div className="max-w-xl mx-auto mb-12 animate-fade-in">
+            <AuditFeed />
+          </div>
+        )}
+
         {/* Results Section */}
-        {score !== null && (
+        {score !== null && !analyzing && (
           <div className="animate-fade-in-up">
             <SecurityScore score={score} warnings={warnings} />
           </div>
         )}
 
-        {/* Initial Empty State */}
+        {/* Initial State */}
         {score === null && !analyzing && !error && credits > 0 && (
           <div className="text-center opacity-50 mt-20">
             <p className="text-lg mb-6">Enter a contract address to verify.</p>
           </div>
         )}
+
+        {/* Deep Dive Modal */}
+        {showDeepDiveModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+            <div className="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full border border-slate-200 dark:bg-slate-900 dark:border-slate-700">
+              <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2">⚠️ Large Contract Detected</h3>
+              <p className="text-slate-600 dark:text-slate-300 mb-6">
+                This contract bytecode exceeds 10KB. A standard scan is insufficient.
+                <br /><br />
+                <strong>Required: Deep Dive Audit</strong>
+                <br />
+                <span className="text-emerald-500 font-bold">Cost: 3 Credits</span>
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDeepDiveModal(false)}
+                  className="flex-1 py-3 bg-slate-200 text-slate-800 font-bold rounded hover:bg-slate-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleAudit(undefined, true)}
+                  className="flex-1 py-3 bg-emerald-600 text-white font-bold rounded hover:bg-emerald-700"
+                >
+                  Approve (3 Credits)
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Treasury Visuals */}
+        <TreasuryView />
 
       </main>
     </div>

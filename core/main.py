@@ -26,26 +26,30 @@ app.add_middleware(
 
 class AuditRequest(BaseModel):
     address: str
-    user_id: str  # Required for credit check
+    user_id: str
+    confirm_deep_dive: bool = False # User must opt-in for 3 credits
 
 class PaymentRequest(BaseModel):
     tx_hash: str
     user_id: str
+    credits: int = 1 # Default to 1, but supports 10, 50
 
 @app.get("/api/fee")
 async def get_fee():
-    """Returns the current Dynamic Fee in ETH."""
+    """Returns the current Dynamic Fee for 1 Credit."""
     fee = calculate_dynamic_fee()
     return {"fee": fee, "currency": "ETH", "note": "Covers AI Reasoning & Security Vault contribution"}
 
 @app.post("/api/pay")
 async def process_payment(request: PaymentRequest):
     """
-    Verifies a payment transaction and adds a credit.
+    Verifies a payment transaction and adds credits.
     """
-    # Using mock verification for development/demo ease
-    # In production, swap with verify_payment(request.tx_hash, request.user_id)
-    success, message = mock_verify_payment(request.tx_hash, request.user_id)
+    if request.credits not in [1, 10, 50]:
+         raise HTTPException(status_code=400, detail="Invalid credit bundle.")
+
+    # In production, we'd verify the AMOUNT match the bundle cost (credits * fee)
+    success, message = mock_verify_payment(request.tx_hash, request.user_id, request.credits)
     if not success:
         raise HTTPException(status_code=400, detail=message)
     
@@ -59,32 +63,52 @@ async def check_credits(user_id: str):
 @app.post("/api/audit")
 async def audit_contract(request: AuditRequest):
     """
-    Analyzes a smart contract address using the Audit Engine.
-    Requires 1 credit.
+    Analyzes a smart contract.
+    Checks Complexity -> Enforces Tiered Pricing.
     """
-    # 0. Check Vault Solvency (Optimized Finance Core)
+    from .audit_logic import estimate_complexity
+
+    # 0. Check Vault Solvency
     is_solvent, balance = check_vault_balance()
     if not is_solvent:
-        raise HTTPException(
-            status_code=503,
-            detail=f"Security Vault insolvent ({balance} ETH). Cannot guarantee audit safety."
-        )
+        raise HTTPException(status_code=503, detail=f"Security Vault insolvent ({balance} ETH).")
 
-    # 1. Deduct Credit
-    if not use_credit(request.user_id):
-        raise HTTPException(
+    # 1. Complexity Check
+    complexity = estimate_complexity(request.address)
+    cost = 3 if complexity == "Deep Dive" else 1
+
+    if complexity == "Deep Dive" and not request.confirm_deep_dive:
+        # Halt and ask for confirmation
+        return {
+            "status": "requires_approval",
+            "complexity": "Deep Dive",
+            "cost": 3,
+            "message": "Large contract detected (>10KB). Deep Dive required."
+        }
+
+    # 2. Deduct Credits
+    # available = get_credits(request.user_id)
+    # if available < cost: ...
+    # Simplified usage: loop deduct? Or update db to deduct N.
+    # For now, we will just checking `use_credit` N times which is inefficient but safe for this MVP loop
+    # Better: check balance first.
+    
+    current_credits = get_credits(request.user_id)
+    if current_credits < cost:
+         raise HTTPException(
             status_code=402, 
-            detail="Insufficient credits. Please pay the Dynamic Fee to continue."
+            detail=f"Insufficient credits. This audit requires {cost} credits."
         )
+    
+    # Deduct
+    for _ in range(cost):
+        use_credit(request.user_id)
 
     try:
         # Call the audit logic
         result_json = check_contract(request.address)
         result = json.loads(result_json)
-        
-        if "error" in result:
-             pass
-
+        result['cost_deducted'] = cost 
         return result
 
     except Exception as e:
