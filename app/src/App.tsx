@@ -17,7 +17,10 @@ function App() {
   const [userId, setUserId] = useState<string>('')
   const [credits, setCredits] = useState<number>(0)
   const [paying, setPaying] = useState(false)
-  const [dynamicFee, setDynamicFee] = useState<string>('0.001')
+
+  // Fee Quote State
+  const [feeQuote, setFeeQuote] = useState<{ amount: number, expiry: number, signature: string } | null>(null)
+  const [quoteTimeLeft, setQuoteTimeLeft] = useState<number>(0);
   const [walletAddress, setWalletAddress] = useState<string | null>(null)
 
   // Deep Dive State
@@ -47,7 +50,20 @@ function App() {
     fetchCredits(currentUserId);
     fetchFee();
 
+    // Quote Timer
+    const timer = setInterval(() => {
+      setQuoteTimeLeft(prev => prev > 0 ? prev - 1 : 0);
+    }, 1000);
+    return () => clearInterval(timer);
+
   }, [])
+
+  // Refresh Quote when expired
+  useEffect(() => {
+    if (quoteTimeLeft === 0 && feeQuote) {
+      fetchFee();
+    }
+  }, [quoteTimeLeft, feeQuote]);
 
   const fetchCredits = async (uid: string) => {
     try {
@@ -66,7 +82,13 @@ function App() {
       const res = await fetch('http://localhost:8000/api/fee')
       if (res.ok) {
         const data = await res.json()
-        setDynamicFee(String(data.fee))
+        // API returns { quote: { amount, expiry, signature }, note: ... }
+        if (data.quote) {
+          setFeeQuote(data.quote);
+          const now = Math.floor(Date.now() / 1000);
+          const timeLeft = data.quote.expiry - now;
+          setQuoteTimeLeft(timeLeft > 0 ? timeLeft : 0);
+        }
       }
     } catch (e) {
       console.error("Failed to fetch fee", e)
@@ -144,7 +166,9 @@ function App() {
       })
 
       if (response.status === 402) {
-        throw new Error("Insufficient credits. Please purchase more.")
+        // Handle Fee Limit or insufficient credits
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Insufficient credits.");
       }
 
       if (response.status === 503) {
@@ -169,6 +193,7 @@ function App() {
       } else {
         setScore(data.vera_score)
         setWarnings(data.warnings || [])
+        // If it was a deep dive cost or just 1 credit, update balance
         fetchCredits(userId)
         WebApp.HapticFeedback.notificationOccurred('success');
       }
@@ -188,9 +213,10 @@ function App() {
   // Sync MainButton State
   useEffect(() => {
     const mainButton = WebApp.MainButton;
+    const feeDisplay = feeQuote ? `${feeQuote.amount} ETH` : 'Loading...';
 
     if (credits < 1) {
-      mainButton.setText(`PAY ${dynamicFee} ETH (1 Credit)`);
+      mainButton.setText(`PAY ${feeDisplay} (1 Credit)`);
       mainButton.show();
       mainButton.onClick(() => handlePayment(1));
     } else if (address) {
@@ -205,7 +231,7 @@ function App() {
       mainButton.offClick(handlePayment);
       mainButton.offClick(handleAudit);
     };
-  }, [credits, address, handleAudit, handlePayment, dynamicFee]);
+  }, [credits, address, handleAudit, handlePayment, feeQuote]);
 
 
   return (
@@ -218,6 +244,7 @@ function App() {
           <button
             onClick={connectWallet}
             className="text-xs px-3 py-1 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+            title={walletAddress || "Connect Wallet"}
           >
             {walletAddress ?
               <span className="text-emerald-600 font-bold">● {walletAddress.substring(0, 6)}...</span>
@@ -238,20 +265,34 @@ function App() {
           {credits < 1 ? (
             <div className="text-center p-8 rounded-xl shadow-sm border" style={{ backgroundColor: 'var(--tg-theme-secondary-bg-color)', borderColor: 'var(--tg-theme-hint-color)' }}>
               <h2 className="text-xl font-bold mb-2">Audit Credits Required</h2>
-              <div className="p-4 rounded-lg mb-6 border opacity-80" style={{ borderColor: 'var(--tg-theme-hint-color)' }}>
+              <div className="p-4 rounded-lg mb-6 border opacity-80 relative overflow-hidden" style={{ borderColor: 'var(--tg-theme-hint-color)' }}>
                 <p className="text-xs uppercase tracking-wider font-semibold mb-1">Dynamic Cost (1 Credit)</p>
-                <p className="text-2xl font-mono font-bold">{dynamicFee} ETH</p>
+                {feeQuote ? (
+                  <>
+                    <p className="text-2xl font-mono font-bold animate-pulse-slow">{feeQuote.amount} ETH</p>
+                    <div className="flex justify-center items-center gap-2 mt-2">
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                        Buffers: +1% Slippage
+                      </span>
+                      <span className={`text-[10px] px-2 py-0.5 rounded border ${quoteTimeLeft < 10 ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-slate-500/10 text-slate-500 border-slate-500/20'}`}>
+                        Expires in: {quoteTimeLeft}s
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-2xl font-mono font-bold text-slate-400">Fetching Quote...</p>
+                )}
               </div>
 
               <div className="grid grid-cols-3 gap-2 mb-4">
-                <button onClick={() => handlePayment(1)} disabled={paying} className="py-3 bg-emerald-500 text-white font-bold rounded hover:bg-emerald-600 disabled:opacity-50">
+                <button onClick={() => handlePayment(1)} disabled={paying} className="py-3 bg-emerald-500 text-white font-bold rounded hover:bg-emerald-600 disabled:opacity-50 text-sm sm:text-base">
                   1 Credit
                 </button>
-                <button onClick={() => handlePayment(10)} disabled={paying} className="py-3 bg-emerald-600 text-white font-bold rounded hover:bg-emerald-700 disabled:opacity-50 relative overflow-hidden">
+                <button onClick={() => handlePayment(10)} disabled={paying} className="py-3 bg-emerald-600 text-white font-bold rounded hover:bg-emerald-700 disabled:opacity-50 relative overflow-hidden text-sm sm:text-base">
                   <span className="relative z-10">10 Pack</span>
                   <div className="absolute inset-0 bg-white/10 skew-x-12 -ml-4"></div>
                 </button>
-                <button onClick={() => handlePayment(50)} disabled={paying} className="py-3 bg-slate-800 text-white font-bold rounded hover:bg-slate-900 disabled:opacity-50 border border-emerald-500/50">
+                <button onClick={() => handlePayment(50)} disabled={paying} className="py-3 bg-slate-800 text-white font-bold rounded hover:bg-slate-900 disabled:opacity-50 border border-emerald-500/50 text-sm sm:text-base">
                   50 Pack
                 </button>
               </div>
@@ -275,6 +316,9 @@ function App() {
                 >
                   {analyzing ? 'Scanning...' : 'Audit'}
                 </button>
+              </div>
+              <div className="mt-2 text-center text-xs opacity-50">
+                Free Tier: 3 scans/24h • Premium: Unlimited (1 credit) • Deep Dive: 3 credits
               </div>
             </>
           )}

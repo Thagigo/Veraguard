@@ -1,5 +1,5 @@
 from web3 import Web3
-from core.database import add_credit, record_tx, tx_exists
+from core.database import db_add_credits, record_tx, tx_exists
 import os
 
 # Placeholder - should be in .env
@@ -43,10 +43,13 @@ def verify_payment(tx_hash: str, user_id: str):
 
     # If all good, record and add credit
     record_tx(tx_hash, user_id, float(value_eth))
-    add_credit(user_id, 1) # 1 credit per audit
+    try:
+        db_add_credits(user_id, 1, tx_hash) # 1 credit per audit
+    except ValueError as e:
+        return False, str(e)
     return True, "Payment verified. Credit added."
 
-def mock_verify_payment(tx_hash: str, user_id: str):
+def mock_verify_payment(tx_hash: str, user_id: str, credits: int = 1):
     """
     Mock version for testing without real ETH.
     Always approves if tx_hash starts with '0xvalid'.
@@ -55,8 +58,13 @@ def mock_verify_payment(tx_hash: str, user_id: str):
         return False, "Transaction already used."
     
     if tx_hash.startswith("0xvalid"):
-        record_tx(tx_hash, user_id, 0.001)
-        add_credit(user_id, 1)
-        return True, "Payment verified (MOCK). Credit added."
+        # Mock success for any valid-looking hash
+        # Add credits with Double-Spend Protection
+        try:
+            db_add_credits(user_id, credits, tx_hash)
+        except ValueError as e:
+            return False, str(e)
+        
+        return True, f"Payment verified. Added {credits} Credit(s)."
     
     return False, "Invalid mock transaction."

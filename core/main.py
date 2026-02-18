@@ -36,9 +36,9 @@ class PaymentRequest(BaseModel):
 
 @app.get("/api/fee")
 async def get_fee():
-    """Returns the current Dynamic Fee for 1 Credit."""
-    fee = calculate_dynamic_fee()
-    return {"fee": fee, "currency": "ETH", "note": "Covers AI Reasoning & Security Vault contribution"}
+    """Returns a Signed Quote with 60s expiry."""
+    quote = calculate_dynamic_fee()
+    return {"quote": quote, "note": "Quote valid for 60 seconds."}
 
 @app.post("/api/pay")
 async def process_payment(request: PaymentRequest):
@@ -64,9 +64,10 @@ async def check_credits(user_id: str):
 async def audit_contract(request: AuditRequest):
     """
     Analyzes a smart contract.
-    Checks Complexity -> Enforces Tiered Pricing.
+    Checks Complexity -> Enforces Tiered Pricing & Rate Limits.
     """
     from .audit_logic import universal_ledger_check
+    from core.database import check_rate_limit, log_scan_attempt
 
     # 0. Check Vault Solvency
     is_solvent, balance = check_vault_balance()
@@ -74,12 +75,10 @@ async def audit_contract(request: AuditRequest):
         raise HTTPException(status_code=503, detail=f"Security Vault insolvent ({balance} ETH).")
 
     # 1. Universal Ledger Check (Stealth Triage)
-    from .audit_logic import universal_ledger_check
     complexity = universal_ledger_check(request.address)
     cost = 3 if complexity == "Deep Dive" else 1
 
     if complexity == "Deep Dive" and not request.confirm_deep_dive:
-        # Halt and ask for confirmation
         return {
             "status": "requires_approval",
             "complexity": "Deep Dive",
@@ -87,29 +86,30 @@ async def audit_contract(request: AuditRequest):
             "message": "Universal Ledger Alert: Contract > 24KB. Deep Dive required."
         }
 
-    # 2. Deduct Credits
-    # available = get_credits(request.user_id)
-    # if available < cost: ...
-    # Simplified usage: loop deduct? Or update db to deduct N.
-    # For now, we will just checking `use_credit` N times which is inefficient but safe for this MVP loop
-    # Better: check balance first.
-    
+    # 2. Credit / Rate Limit Check
     current_credits = get_credits(request.user_id)
+    used_free_tier = False
+
     if current_credits < cost:
-         raise HTTPException(
-            status_code=402, 
-            detail=f"Insufficient credits. This audit requires {cost} credits."
-        )
+        # If standard cost (1) and user has no credits, check Free Tier
+        if cost == 1 and check_rate_limit(request.user_id):
+            used_free_tier = True
+            log_scan_attempt(request.user_id)
+        else:
+             detail = "Daily Free Limit Reached (3/24h). Please buy credits." if cost == 1 else f"Insufficient credits for Deep Dive ({cost} required)."
+             raise HTTPException(status_code=402, detail=detail)
     
-    # Deduct
-    for _ in range(cost):
-        use_credit(request.user_id)
+    # 3. Deduct Credits (if not free tier)
+    if not used_free_tier:
+        for _ in range(cost):
+            use_credit(request.user_id)
 
     try:
         # Call the audit logic
         result_json = check_contract(request.address)
         result = json.loads(result_json)
-        result['cost_deducted'] = cost 
+        result['cost_deducted'] = 0 if used_free_tier else cost
+        result['plan'] = "Free Tier" if used_free_tier else "Premium"
         return result
 
     except Exception as e:

@@ -1,5 +1,7 @@
 import random
 from web3 import Web3
+import time
+import hashlib
 
 # Placeholder addresses to match contract
 SECURITY_VAULT = "0x1111111111111111111111111111111111111111"
@@ -10,23 +12,28 @@ MIN_VAULT_BALANCE_WEI = Web3.to_wei(0.01, 'ether')
 
 def calculate_dynamic_fee():
     """
-    Calculates the 'Dynamic Fee' based on:
-    1. Gemini Pro Input/Output token pricing (simulated).
-    2. + 20% Safety Margin.
+    Simulates fetching the current cost of Gemini 1.5 Pro input/output tokens.
+    Returns a 'Signed Quote' object with 1% slippage buffer.
     """
-    # Simulation of live pricing data
-    # Base resource cost for AI reasoning (approx 0.0008 ETH)
-    base_ai_cost = 0.0008 
+    # Base cost simulation (fluctuating)
+    base_fee = 0.001 + (time.time() % 10) * 0.00001 
     
-    # Add some fluctuation to simulate market conditions
-    market_fluctuation = random.uniform(0.95, 1.05) 
+    # 1. Add 1% Slippage Buffer
+    buffered_fee = base_fee * 1.01
     
-    current_cost = base_ai_cost * market_fluctuation
+    # 2. Generate Expiry (60 seconds)
+    expiry = int(time.time()) + 60
     
-    # Add 20% Safety Margin
-    total_fee = current_cost * 1.20
+    # 3. specific 'Signature' (Mocked)
+    payload = f"{buffered_fee:.6f}:{expiry}:VERAGUARD_SECRET"
+    signature = hashlib.sha256(payload.encode()).hexdigest()
     
-    return round(total_fee, 5)
+    return {
+        "amount": round(buffered_fee, 6),
+        "currency": "ETH", 
+        "expiry": expiry,
+        "signature": signature
+    }
 
 def check_vault_balance():
     """
