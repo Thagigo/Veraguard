@@ -6,6 +6,7 @@ from .audit_logic import check_contract
 
 from core.database import init_db, get_credits, use_credit
 from core.payment_gate import verify_payment, mock_verify_payment
+from core.payment_handler import calculate_dynamic_fee, check_vault_balance
 
 app = FastAPI(title="VeraGuard Audit Engine")
 
@@ -31,6 +32,12 @@ class PaymentRequest(BaseModel):
     tx_hash: str
     user_id: str
 
+@app.get("/api/fee")
+async def get_fee():
+    """Returns the current Dynamic Fee in ETH."""
+    fee = calculate_dynamic_fee()
+    return {"fee": fee, "currency": "ETH", "note": "Covers AI Reasoning & Security Vault contribution"}
+
 @app.post("/api/pay")
 async def process_payment(request: PaymentRequest):
     """
@@ -55,11 +62,19 @@ async def audit_contract(request: AuditRequest):
     Analyzes a smart contract address using the Audit Engine.
     Requires 1 credit.
     """
+    # 0. Check Vault Solvency (Optimized Finance Core)
+    is_solvent, balance = check_vault_balance()
+    if not is_solvent:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Security Vault insolvent ({balance} ETH). Cannot guarantee audit safety."
+        )
+
     # 1. Deduct Credit
     if not use_credit(request.user_id):
         raise HTTPException(
             status_code=402, 
-            detail="Insufficient credits. Please pay 0.001 ETH to continue."
+            detail="Insufficient credits. Please pay the Dynamic Fee to continue."
         )
 
     try:
