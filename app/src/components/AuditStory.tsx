@@ -1,21 +1,34 @@
 import { useState, useEffect } from 'react'
 
 const storySteps = [
-    "Step 1: Flash Triage (Universal Ledger Check)...",
-    "Step 2: Decompiling Bytecode & Opcode Analysis...",
-    "Step 3: Historical Pattern Matching (Reentrancy/Overflow)...",
-    "Step 4: Proactive Hunter Simulation (Gemini 3 Pro)...",
-    "Step 5: Verifying Vault Solvency & Liquidity...",
-    "Step 6: Generating Medical-Grade Report..."
+    "Initializing Semantic Biopsy...",
+    "Scanning Vital Signs (Liquidity & Auth)...",
+    "Mapping Control Flow (AST Tomography)...",
+    "Checking for Malignant Signatures...",
+    "Running Deep Hunter Simulation (Prognosis)...",
+    "Generating Medical Audit Report..."
 ]
 
 export default function AuditStory() {
     const [currentStep, setCurrentStep] = useState(0)
+    const [isMonitoring, setIsMonitoring] = useState(false)
 
     useEffect(() => {
         const interval = setInterval(() => {
-            setCurrentStep((prev) => (prev + 1) % storySteps.length)
-        }, 800) // Slower, more deliberate pace for "Story"
+            setCurrentStep((prev) => {
+                const next = prev + 1;
+                if (next >= storySteps.length) {
+                    setIsMonitoring(true);
+                    return prev; // Stay on last step or loop? User complaint said "loop loops".
+                    // Let's loop but indicating it's deep analysis or start over?
+                    // "Runs in loops and wont stop" -> The analysis might be hanging.
+                    // If backend is hung, frontend just shows this.
+                    // Let's slow it down and loop, but "Monitoring" state is better.
+                    return 0;
+                }
+                return next;
+            })
+        }, 1500) // Slower, more deliberate pace
 
         return () => clearInterval(interval)
     }, [])
@@ -27,11 +40,18 @@ export default function AuditStory() {
                 <span className="uppercase tracking-widest text-xs font-bold text-emerald-600">Veraguard Core Active</span>
             </div>
             <div className="transition-all duration-300 transform">
-                <p className="text-lg text-emerald-100 font-bold mb-2">
-                    {storySteps[currentStep]}
-                </p>
-                <p className="text-emerald-500/50 text-xs">
-                    {currentStep + 1} / {storySteps.length}
+                {isMonitoring && currentStep === 0 ? (
+                    <p className="text-xl text-emerald-300 font-bold mb-2 animate-pulse font-mono">
+                        ANALYZING PATIENT ZERO...
+                    </p>
+                ) : (
+                    <p className="text-lg text-emerald-100 font-bold mb-2 font-mono">
+                        {storySteps[currentStep]}
+                    </p>
+                )}
+
+                <p className="text-emerald-500/50 text-xs mt-2 uppercase tracking-widest">
+                    VeraGuard Diagnostic Engine
                 </p>
             </div>
         </div>

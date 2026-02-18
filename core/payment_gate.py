@@ -57,7 +57,7 @@ def mock_verify_payment(tx_hash: str, user_id: str, credits: int = 1):
     if tx_exists(tx_hash):
         return False, "Transaction already used."
     
-    if tx_hash.startswith("0xvalid"):
+    if tx_hash.startswith("0xvalid") or tx_hash.startswith("0xreal"):
         # Mock success for any valid-looking hash
         # Add credits with Double-Spend Protection
         try:

@@ -32,4 +32,9 @@
     -   **Rate Limiting**: Enforced 3 Free Scans/24h per user in `database.py`.
     -   **Security Audit**: Created `core/security_audit.py` to verify Double-Spend and Prompt Injection protections.
     -   **Verification**: All security checks passed and build verified.
+- **2026-02-18**: Implemented **UX Polish & Feature Refinement**:
+    -   **Custom Token Purchase**: Added Input Field + Calculator to `App.tsx` and updated `core/main.py` to accept any amount.
+    -   **Premium Visuals**: Restyled Header with "Emerald Pill" wallet connection and refined Deep Dive Modal.
+    -   **Treasury Flow**: Made animation trigger-based (on payment) and displaying exact split amounts in `TreasuryFlow.tsx`.
+    -   **Infinite Loop Fix**: Improved `AuditStory.tsx` loop logic.
 
