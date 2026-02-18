@@ -4,12 +4,20 @@ from pydantic import BaseModel
 import json
 from .audit_logic import check_contract
 
+from core.database import init_db, get_credits, use_credit
+from core.payment_gate import verify_payment, mock_verify_payment
+
 app = FastAPI(title="VeraGuard Audit Engine")
+
+# Initialize DB on startup
+@app.on_event("startup")
+def startup_event():
+    init_db()
 
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"], # Vite default port
+    allow_origins=["http://localhost:5173"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -17,23 +25,49 @@ app.add_middleware(
 
 class AuditRequest(BaseModel):
     address: str
+    user_id: str  # Required for credit check
+
+class PaymentRequest(BaseModel):
+    tx_hash: str
+    user_id: str
+
+@app.post("/api/pay")
+async def process_payment(request: PaymentRequest):
+    """
+    Verifies a payment transaction and adds a credit.
+    """
+    # Using mock verification for development/demo ease
+    # In production, swap with verify_payment(request.tx_hash, request.user_id)
+    success, message = mock_verify_payment(request.tx_hash, request.user_id)
+    if not success:
+        raise HTTPException(status_code=400, detail=message)
+    
+    new_balance = get_credits(request.user_id)
+    return {"status": "success", "message": message, "credits": new_balance}
+
+@app.get("/api/credits/{user_id}")
+async def check_credits(user_id: str):
+    return {"credits": get_credits(user_id)}
 
 @app.post("/api/audit")
 async def audit_contract(request: AuditRequest):
     """
     Analyzes a smart contract address using the Audit Engine.
+    Requires 1 credit.
     """
+    # 1. Deduct Credit
+    if not use_credit(request.user_id):
+        raise HTTPException(
+            status_code=402, 
+            detail="Insufficient credits. Please pay 0.001 ETH to continue."
+        )
+
     try:
         # Call the audit logic
-        # check_contract returns a JSON string, so we need to parse it
         result_json = check_contract(request.address)
         result = json.loads(result_json)
         
-        # Check for error in the logic
         if "error" in result:
-             # Just return it as part of the response for the UI to handle, 
-             # or raise HTTPException if it's a critical server error.
-             # Here we pass it through.
              pass
 
         return result
