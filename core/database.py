@@ -46,6 +46,41 @@ def init_db():
 
         cursor.execute('''CREATE TABLE IF NOT EXISTS referral_events
                  (id INTEGER PRIMARY KEY AUTOINCREMENT, code TEXT, ip_hash TEXT, timestamp REAL)''')
+
+        # [NEW] Sovereign Prize & Treasury
+        cursor.execute('''CREATE TABLE IF NOT EXISTS treasury_stats (
+            id INTEGER PRIMARY KEY CHECK (id = 1), 
+            total_volume_eth REAL DEFAULT 0, 
+            chest_balance_eth REAL DEFAULT 0, 
+            war_chest_eth REAL DEFAULT 0, 
+            last_updated REAL
+        )''')
+
+        cursor.execute('''CREATE TABLE IF NOT EXISTS daily_metrics (
+            day_timestamp INTEGER PRIMARY KEY, 
+            volume_eth REAL DEFAULT 0, 
+            tx_count INTEGER DEFAULT 0
+        )''')
+
+        cursor.execute('''CREATE TABLE IF NOT EXISTS payout_rounds (
+            round_id TEXT PRIMARY KEY, 
+            merkle_root TEXT, 
+            total_payout_eth REAL, 
+            winners_count INTEGER, 
+            metadata_json TEXT, 
+            timestamp REAL
+        )''')
+        
+        # [NEW] Anti-Fragile Ecosystem (Fatigue & Leading)
+        cursor.execute('''CREATE TABLE IF NOT EXISTS scan_daily_counts (
+            user_id TEXT, 
+            day_timestamp INTEGER, 
+            scan_count INTEGER DEFAULT 0,
+            PRIMARY KEY (user_id, day_timestamp)
+        )''')
+
+        # Initialize Treasury if empty
+        cursor.execute("INSERT OR IGNORE INTO treasury_stats (id, total_volume_eth, chest_balance_eth, war_chest_eth, last_updated) VALUES (1, 0, 0, 0, ?)", (time.time(),))
           
         # Update Referrals with flagging
         try:
@@ -76,6 +111,11 @@ def init_db():
 
         try:
             cursor.execute("ALTER TABLE audit_reports ADD COLUMN is_first_finder INTEGER DEFAULT 0")
+        except sqlite3.OperationalError:
+            pass
+
+        try:
+            cursor.execute("ALTER TABLE audit_reports ADD COLUMN royalty_claimed_eth REAL DEFAULT 0")
         except sqlite3.OperationalError:
             pass
 
@@ -153,7 +193,7 @@ def record_tx(tx_hash: str, user_id: str, amount_eth: float, amount_usd: float =
         cursor.execute("""
             INSERT INTO verified_txs (tx_hash, user_id, amount_eth, amount_usd, timestamp)
             VALUES (?, ?, ?, ?, ?)
-        """, (tx_hash, user_id, amount_eth, amount_usd, datetime.datetime.now()))
+        """, (tx_hash, user_id, amount_eth, amount_usd, time.time()))
         conn.commit()
 
 def tx_exists(tx_hash: str) -> bool:
@@ -381,4 +421,154 @@ def check_referral_velocity(code: str, limit: int = 100, window_seconds: int = 8
             return False
             
     return True
+
+    return True
+
+
+# --- HISTORY AGGREGATION ---
+def get_user_history(user_id: str):
+    """
+    Aggregates:
+    - Verified Txs (Purchases)
+    - Audit Reports (Scans)
+    - Referral Claims (Rewards)
+    """
+    history = []
+    
+    with get_db() as conn:
+        c = conn.cursor()
+        
+        # 1. Purchases
+        c.execute("SELECT tx_hash, amount_eth, amount_usd, timestamp FROM verified_txs WHERE user_id=?", (user_id,))
+        for r in c.fetchall():
+            history.append({
+                "type": "purchase",
+                "id": r[0], # tx_hash
+                "amount_eth": r[1],
+                "amount_usd": r[2],
+                "timestamp": r[3],
+                "description": "Credit Purchase"
+            })
+            
+        # 2. Scans (Audits)
+        # using report_id as id
+        c.execute("SELECT report_id, address, vera_score, timestamp FROM audit_reports WHERE finder_id=?", (user_id,))
+        for r in c.fetchall():
+            history.append({
+                "type": "audit",
+                "id": r[0],
+                "address": r[1],
+                "score": r[2],
+                "timestamp": r[3],
+                "description": "Contract Scan"
+            })
+            
+        # 3. Referral Rewards
+        c.execute("SELECT referee_id, timestamp FROM referral_claims WHERE referrer_id=?", (user_id,))
+        for r in c.fetchall():
+             history.append({
+                "type": "reward",
+                "id": f"rew_{r[1]}_{r[0]}", 
+                "referee": r[0],
+                "timestamp": r[1],
+                "description": "Referral Reward"
+            })
+            
+    # Sort by timestamp DESC
+    def parse_ts(ts):
+        try:
+            if isinstance(ts, (int, float)):
+                return float(ts)
+            # Handle string timestamps (datetime.now() stringified)
+            # SQLite stores datetime as "YYYY-MM-DD HH:MM:SS.mmmmmm"
+            import dateutil.parser
+            dt = dateutil.parser.parse(str(ts))
+            return dt.timestamp()
+        except:
+            return 0.0
+
+    history.sort(key=lambda x: parse_ts(x['timestamp']), reverse=True)
+    return history
+
+
+# --- TREASURY & PRIZE HELPERS ---
+def log_daily_volume(amount_eth: float):
+    # normalize to midnight
+    midnight = int(time.time() / 86400) * 86400
+    with get_db() as conn:
+        c = conn.cursor()
+        c.execute("INSERT OR IGNORE INTO daily_metrics (day_timestamp, volume_eth, tx_count) VALUES (?, 0, 0)", (midnight,))
+        c.execute("UPDATE daily_metrics SET volume_eth = volume_eth + ?, tx_count = tx_count + 1 WHERE day_timestamp=?", (amount_eth, midnight))
+        
+        # Update Global Treasury
+        c.execute("UPDATE treasury_stats SET total_volume_eth = total_volume_eth + ?, chest_balance_eth = chest_balance_eth + ?, last_updated=?", (amount_eth, amount_eth, time.time()))
+        conn.commit()
+
+def get_treasury_stats():
+    with get_db() as conn:
+        c = conn.cursor()
+        row = c.execute("SELECT total_volume_eth, chest_balance_eth, war_chest_eth FROM treasury_stats WHERE id=1").fetchone()
+        return {"total_volume": row[0], "chest_balance": row[1], "war_chest": row[2]} if row else None
+
+def get_daily_volumes(days: int = 30):
+    with get_db() as conn:
+        c = conn.cursor()
+        cutoff = time.time() - (days * 86400)
+        c.execute("SELECT day_timestamp, volume_eth FROM daily_metrics WHERE day_timestamp > ? ORDER BY day_timestamp DESC", (cutoff,))
+        return [{"date": r[0], "volume": r[1]} for r in c.fetchall()]
+
+def record_payout_round(round_id: str, merkle_root: str, total_payout: float, winners_count: int, metadata: dict):
+    import json
+    with get_db() as conn:
+        c = conn.cursor()
+        c.execute("""
+            INSERT INTO payout_rounds (round_id, merkle_root, total_payout_eth, winners_count, metadata_json, timestamp)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (round_id, merkle_root, total_payout, winners_count, json.dumps(metadata), time.time()))
+        
+        # Deduct from Chest
+        c.execute("UPDATE treasury_stats SET chest_balance_eth = chest_balance_eth - ? WHERE id=1", (total_payout,))
+        conn.commit()
+
+
+# --- ANTI-FRAGILE HELPERS ---
+def increment_daily_scan_count(user_id: str):
+    midnight = int(time.time() / 86400) * 86400
+    with get_db() as conn:
+        c = conn.cursor()
+        c.execute("INSERT OR IGNORE INTO scan_daily_counts (user_id, day_timestamp, scan_count) VALUES (?, ?, 0)", (user_id, midnight))
+        c.execute("UPDATE scan_daily_counts SET scan_count = scan_count + 1 WHERE user_id=? AND day_timestamp=?", (user_id, midnight))
+        conn.commit()
+
+def get_daily_scan_count(user_id: str):
+    midnight = int(time.time() / 86400) * 86400
+    with get_db() as conn:
+        c = conn.cursor()
+        c.execute("SELECT scan_count FROM scan_daily_counts WHERE user_id=? AND day_timestamp=?", (user_id, midnight))
+        row = c.fetchone()
+        return row[0] if row else 0
+
+def get_first_finder(address: str):
+    """Returns user_id of the first finder for this address, if any."""
+    with get_db() as conn:
+        c = conn.cursor()
+        # Find the earliest report for this address with vera_score < 50
+        c.execute("SELECT finder_id FROM audit_reports WHERE address=? AND is_first_finder=1 ORDER BY timestamp ASC LIMIT 1", (address,))
+        row = c.fetchone()
+        return row[0] if row else None
+
+def record_royalty_claim(report_id_or_address: str, finder_id: str, amount_eth: float):
+    # We update the original report or user credits?
+    # Actually simplest is to just give credits to the finder and log it.
+    # We don't have a 'royalty_events' table, but we can update the 'audit_report' of the finder.
+    with get_db() as conn:
+        c = conn.cursor()
+        # Award credits/ETH to finder
+        c.execute("UPDATE users SET credits = credits + ? WHERE user_id=?", (amount_eth * 1000, finder_id)) # 1 ETH = 1000 Credits? Or just store ETH?
+        
+        # We need to track how much was claimed.
+        # Find the original report by this finder for this address
+        # logic: update audit_reports set royalty_claimed_eth += amount where address=? and finder_id=?
+        c.execute("UPDATE audit_reports SET royalty_claimed_eth = royalty_claimed_eth + ? WHERE address=? AND finder_id=?", (amount_eth, report_id_or_address, finder_id))
+        conn.commit()
 

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 
 interface Milestone {
     step: string;
@@ -17,17 +18,53 @@ interface Props {
     riskSummary?: string;
     milestones?: Milestone[];
     vitals?: Vitals;
+    onClose?: () => void; // Added onClose prop for potential modal usage
 }
 
-const AuditReport: React.FC<Props> = ({ score, warnings, riskSummary, milestones, vitals }) => {
+const AuditReport: React.FC<Props> = ({ score, warnings, riskSummary, milestones, vitals, onClose }) => {
     const [expandedMilestone, setExpandedMilestone] = useState<number | null>(null);
+    const [showVaultLock, setShowVaultLock] = useState(false);
 
     const isSafe = score >= 95;
     const pulseColor = score >= 80 ? 'bg-emerald-500' : score >= 50 ? 'bg-amber-500' : 'bg-red-500';
     const textColor = score >= 80 ? 'text-emerald-500' : score >= 50 ? 'text-amber-500' : 'text-red-500';
 
+    // New variables for score-based styling, adapted from the provided snippet
+    const scoreColor = score > 80 ? 'text-emerald-400' : score > 50 ? 'text-amber-400' : 'text-red-500';
+    const borderColor = score > 80 ? 'border-emerald-500' : score > 50 ? 'border-amber-500' : 'border-red-500';
+
+    useEffect(() => {
+        // Emotional Gravity: Bust
+        if (score < 50) {
+            if (window.Telegram?.WebApp?.HapticFeedback) {
+                window.Telegram.WebApp.HapticFeedback.notificationOccurred('error');
+            }
+            setShowVaultLock(true);
+            setTimeout(() => setShowVaultLock(false), 2500);
+        } else {
+            if (window.Telegram?.WebApp?.HapticFeedback) {
+                window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+            }
+        }
+    }, [score]); // Dependency on score
+
     return (
         <div className="max-w-3xl mx-auto space-y-6 animate-fade-in-up">
+            {/* Vault Lock Animation Overlay */}
+            <AnimatePresence>
+                {showVaultLock && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 1.5 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        className="fixed inset-0 z-[60] flex items-center justify-center pointer-events-none"
+                    >
+                        <div className="bg-red-600 text-white font-black text-6xl tracking-tighter border-8 border-white p-10 transform -rotate-12 shadow-2xl uppercase">
+                            VAULT LOCKED
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* 1. VITALS CARD */}
             <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 overflow-hidden relative">

@@ -1,0 +1,8 @@
+﻿fastapi
+uvicorn
+python-dotenv
+google-generativeai
+pydantic
+requests
+web3
+eth-account

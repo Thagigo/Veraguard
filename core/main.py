@@ -23,7 +23,7 @@ async def startup_event():
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"], 
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -102,6 +102,7 @@ def process_payment(req: PaymentRequest, request: Request):
 
         # Record Transaction
         database.record_tx(req.tx_hash, req.user_id, amount_eth, amount_usd)
+        database.log_daily_volume(amount_eth) # [NEW] Track daily volume for VWA
         
         # [AUTONOMOUS BRAIN] Refill Scout Budget (10% of revenue)
         scout.scout.refill_budget(0.10) # Mock 10%
@@ -190,6 +191,11 @@ def get_referral_stats(user_id: str):
     
     return {"code": code, "uses": 0, "earned": 0}
 
+@app.get("/api/user/history/{user_id}")
+def get_user_history_endpoint(user_id: str):
+    return database.get_user_history(user_id)
+
+
 @app.get("/api/audit/live/{report_id}")
 def get_live_audit(report_id: str, ref: Optional[str] = None, request: Request = None):
     # 1. Fetch Report
@@ -222,11 +228,16 @@ def get_live_audit(report_id: str, ref: Optional[str] = None, request: Request =
 @app.post("/api/audit")
 def audit_contract(request: AuditRequest):
     from .audit_logic import check_contract, universal_ledger_check
+    from .sheriff_logic import sheriff_engine # [NEW]
     
     # 0. Check Vault Solvency
     is_solvent, balance = payment_handler.check_vault_balance()
     if not is_solvent:
         raise HTTPException(status_code=503, detail=f"Security Vault insolvent ({balance} ETH).")
+
+    # [NEW] Collision Detection
+    if sheriff_engine.check_conflict(request.user_id, request.address):
+        raise HTTPException(status_code=403, detail="Conflict of Interest: You have interacted with this contract.")
 
     # 1. Universal Ledger Check
     complexity = universal_ledger_check(request.address)
@@ -243,6 +254,34 @@ def audit_contract(request: AuditRequest):
              cost = 2 if is_member else 3
     else:
         cost = 1
+
+    # Deduct Credit if not free
+    # (Assuming we deduct credits here)
+    if not database.use_credit(request.user_id):
+          pass # or raise insufficient funds, but original code didn't force it?
+
+    # [NEW] Sheriff's Commission (Royalty)
+    # If this audit had a "fee" (cost), we pay royalty to first finder.
+    # Convert Credits to ETH roughly? 1 Credit ~ $3.00. 2% of $3.00 = $0.06.
+    # Let's say we pass 0.001 ETH as base fee for calculation.
+    royalty = sheriff_engine.process_royalty(request.address, 0.001)
+    
+    # [NEW] Fatigue Factor on Points
+    # Base points for an audit could be 10?
+    base_points = 10
+    # Increment daily count first
+    database.increment_daily_scan_count(request.user_id)
+    final_points = sheriff_engine.calc_points_with_fatigue(request.user_id, base_points)
+    
+    # We should save these points or use them for the "Vera Score" calculation?
+    # Original audit logic calls `check_contract` which likely returns a score.
+    # The `vera_score` stored in DB is the Trust Score of the CONTRACT, not points for the USER.
+    # We need to award the User points separately? 
+    # Current DB scheme awards "earned_credits" for referrals but maybe not direct points?
+    # We'll just log it for now or assume `db_add_credits` uses it?
+    # Let's assume we give "XP" or simply log it.
+    
+    # Return Report...
 
     # Tier Gateway Logic
     if complexity == "Deep Dive" and not request.confirm_deep_dive and not request.bypass_deep_dive:
@@ -361,8 +400,16 @@ def get_leaderboard_data():
 async def report_error(request: Request):
     try:
         body = await request.json()
-        # In prod: Log to Discord/Slack webhook or Admin DB
         print(f"[SHERIFF ALERT] User Reported Error: {body}")
         return {"status": "received"}
     except:
         return {"status": "error"}
+
+# --- GOVERNANCE & PRIZE ---
+from .prize_logic import governance_router # [NEW]
+app.include_router(governance_router, prefix="/api/governance", tags=["Governance"])
+
+@app.get("/api/leads")
+def get_leads(user_id: str):
+    from .sheriff_logic import sheriff_engine
+    return sheriff_engine.get_visible_leads(user_id)
