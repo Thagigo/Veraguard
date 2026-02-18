@@ -37,4 +37,12 @@
     -   **Premium Visuals**: Restyled Header with "Emerald Pill" wallet connection and refined Deep Dive Modal.
     -   **Treasury Flow**: Made animation trigger-based (on payment) and displaying exact split amounts in `TreasuryFlow.tsx`.
     -   **Infinite Loop Fix**: Improved `AuditStory.tsx` loop logic.
+- **2026-02-18**: Implemented **UI Streamlining & Prestige Polish**:
+    -   **Sheriff Features**: Added "Wall of Shame" (Arrested By Badge) and Leaderboard Footer.
+    -   **Treasury**: Implemented "Reveal" logic (hidden until tx) and precision formatting (6 decimals).
+    -   **Audits**: Fixed `get_eth_price` to use CoinGecko API for accurate USD conversion.
+- **2026-02-18**: Deployed **High-End Security Gateway**:
+    -   **Landing Page**: "Medically Accurate" dark-mode entry with 3D Pulsing Shield and Live Stats Ticker.
+    -   **Responsive Engine**: Implemented fluid typography (`clamp`) and mobile-optimized layouts (`px-6`, vertical stacking).
+    -   **Header**: Redesigned for "Control Center" feel (`px-10`, `justify-between`) with enhanced trusted signals.
 
