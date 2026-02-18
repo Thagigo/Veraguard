@@ -28,4 +28,4 @@ jobs:
         
     - name: Run Core Tests
       run: |
-        python core/test_cases.py
+        python -m core.test_cases
