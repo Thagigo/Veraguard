@@ -1,5 +1,13 @@
-# Project Rules
+# VeraGuard Project Rules
 
-## Documentation
-- **Always maintain a file called `STATUS.md` in the root folder.**
-- Every time you complete a task, update `STATUS.md` with a one-sentence summary of what changed.
+1. **Documentation Updates**: 
+   - After every implementation is completed, you MUST update `STATUS.md` to reflect the changes.
+   - Entries should include the date and a brief description of the feature or fix.
+
+2. **Security First**:
+   - All financial logic must be verified with `core/security_audit.py` or equivalent before deployment.
+   - Double-spend protection and input sanitization are mandatory.
+
+3. **Code Quality**:
+   - Use `npm run build` to verify frontend changes.
+   - Ensure Python backend code is lint-free (check imports).

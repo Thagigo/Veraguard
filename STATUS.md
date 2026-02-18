@@ -23,3 +23,13 @@
     -   **Backend**: Added Dynamic Fee calculation (Gemini Pro Simulation + 20% Safety Margin) in `core/payment_handler.py`.
     -   **Solvency Check**: Enforced Security Vault balance checks before allowing audits.
     -   **Frontend**: Updated Audit Button to display real-time Dynamic Fee.
+- **2026-02-18**: Implemented **Final Polish & UX Enhancements**:
+    -   **Stealth Triage**: "Universal Ledger" logic in backend (>24KB check).
+    -   **Visuals**: Added `TreasuryFlow.tsx` (Split Animation) and `AuditStory.tsx` (Real-time Scan Steps).
+    -   **Wallet Auth**: Integrated `eth_requestAccounts` for user wallet connection.
+- **2026-02-18**: Implemented **Security Hardening & Price Protections**:
+    -   **Price-Lock**: 60-second Signed Quote with 1% Slippage Buffer in `payment_handler.py`.
+    -   **Rate Limiting**: Enforced 3 Free Scans/24h per user in `database.py`.
+    -   **Security Audit**: Created `core/security_audit.py` to verify Double-Spend and Prompt Injection protections.
+    -   **Verification**: All security checks passed and build verified.
+
