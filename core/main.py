@@ -66,15 +66,16 @@ async def audit_contract(request: AuditRequest):
     Analyzes a smart contract.
     Checks Complexity -> Enforces Tiered Pricing.
     """
-    from .audit_logic import estimate_complexity
+    from .audit_logic import universal_ledger_check
 
     # 0. Check Vault Solvency
     is_solvent, balance = check_vault_balance()
     if not is_solvent:
         raise HTTPException(status_code=503, detail=f"Security Vault insolvent ({balance} ETH).")
 
-    # 1. Complexity Check
-    complexity = estimate_complexity(request.address)
+    # 1. Universal Ledger Check (Stealth Triage)
+    from .audit_logic import universal_ledger_check
+    complexity = universal_ledger_check(request.address)
     cost = 3 if complexity == "Deep Dive" else 1
 
     if complexity == "Deep Dive" and not request.confirm_deep_dive:
@@ -83,7 +84,7 @@ async def audit_contract(request: AuditRequest):
             "status": "requires_approval",
             "complexity": "Deep Dive",
             "cost": 3,
-            "message": "Large contract detected (>10KB). Deep Dive required."
+            "message": "Universal Ledger Alert: Contract > 24KB. Deep Dive required."
         }
 
     # 2. Deduct Credits

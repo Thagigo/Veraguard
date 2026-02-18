@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import SecurityScore from './components/SecurityScore'
-import TreasuryView from './components/TreasuryView'
-import AuditFeed from './components/AuditFeed'
+import TreasuryFlow from './components/TreasuryFlow'
+import AuditStory from './components/AuditStory'
 import WebApp from '@twa-dev/sdk'
 import './App.css'
 
@@ -18,6 +18,7 @@ function App() {
   const [credits, setCredits] = useState<number>(0)
   const [paying, setPaying] = useState(false)
   const [dynamicFee, setDynamicFee] = useState<string>('0.001')
+  const [walletAddress, setWalletAddress] = useState<string | null>(null)
 
   // Deep Dive State
   const [showDeepDiveModal, setShowDeepDiveModal] = useState(false)
@@ -72,13 +73,28 @@ function App() {
     }
   }
 
+  const connectWallet = async () => {
+    if (typeof window.ethereum !== 'undefined') {
+      try {
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        setWalletAddress(accounts[0]);
+        WebApp.HapticFeedback.notificationOccurred('success');
+      } catch (error) {
+        console.error(error);
+        WebApp.HapticFeedback.notificationOccurred('error');
+      }
+    } else {
+      alert('No crypto wallet found. Please install MetaMask.');
+    }
+  }
+
   const handlePayment = useCallback(async (amount: number = 1) => {
     WebApp.MainButton.showProgress(false);
     setPaying(true);
     setError(null);
     try {
-      // simulating a Wallet Tx Hash
-      const mockTxHash = "0xvalid_" + Math.random().toString(36).substr(2, 9)
+      // simulating a Wallet Tx Hash (or use real if wallet connected)
+      const mockTxHash = walletAddress ? "0xreal_" + Math.random().toString(36).substr(2, 9) : "0xvalid_" + Math.random().toString(36).substr(2, 9)
 
       const response = await fetch('http://localhost:8000/api/pay', {
         method: 'POST',
@@ -99,15 +115,12 @@ function App() {
       setPaying(false);
       WebApp.MainButton.hideProgress();
     }
-  }, [userId]);
+  }, [userId, walletAddress]);
 
   const handleAudit = useCallback(async (e?: React.FormEvent, confirmDeepDive: boolean = false) => {
     if (e) e.preventDefault();
     if (!address && !confirmDeepDive) return;
 
-    // For Deep Dive re-trigger, we might not have 'address' from state if cleared, 
-    // but typically we keep it using 'pendingDeepDiveAddress' logic if we want.
-    // However, here we just use 'address' state.
     const targetAddress = confirmDeepDive && pendingDeepDiveAddress ? pendingDeepDiveAddress : address;
 
     WebApp.MainButton.showProgress(false);
@@ -140,7 +153,7 @@ function App() {
 
       const data = await response.json()
 
-      // Handle Tiered Pricing Confirmation
+      // Handle Tiered Pricing (Universal Ledger Alert)
       if (data.status === "requires_approval") {
         setPendingDeepDiveAddress(targetAddress);
         setShowDeepDiveModal(true);
@@ -164,15 +177,7 @@ function App() {
       setError(err.message || "Something went wrong. Is the backend running?")
       WebApp.HapticFeedback.notificationOccurred('error');
     } finally {
-      // If we showed the modal, we already stopped analyzing. 
-      // Only stop if we are NOT showing the modal (i.e. finished or errored out)
-      // Actually we setAnalyzing(false) inside the modal block, so this is safe if we guard it?
-      // But 'finally' runs anyway.
-      // Let's rely on the state check.
       if (!showDeepDiveModal) {
-        // But wait, showDeepDiveModal state update isn't immediate in this closure?
-        // True. But we returned early in that block. 
-        // So this finally block ONLY runs if we didn't return early.
         setAnalyzing(false);
         WebApp.MainButton.hideProgress();
       }
@@ -207,8 +212,21 @@ function App() {
     <div className="min-h-screen font-sans" style={{ backgroundColor: 'var(--tg-theme-bg-color)', color: 'var(--tg-theme-text-color)' }}>
       <header className="p-6 shadow-sm border-b border-slate-200 flex justify-between items-center" style={{ borderColor: 'var(--tg-theme-hint-color)' }}>
         <h1 className="text-2xl font-bold tracking-tight">VeraGuard <span className="text-emerald-500">App</span></h1>
-        <div className="text-sm font-medium px-3 py-1 rounded-full" style={{ backgroundColor: 'var(--tg-theme-secondary-bg-color)' }}>
-          Credits: <span className={credits > 0 ? "text-emerald-600 font-bold" : "text-red-500 font-bold"}>{credits}</span>
+
+        <div className="flex gap-2">
+          {/* Wallet Connect */}
+          <button
+            onClick={connectWallet}
+            className="text-xs px-3 py-1 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+          >
+            {walletAddress ?
+              <span className="text-emerald-600 font-bold">● {walletAddress.substring(0, 6)}...</span>
+              : <span className="text-slate-500">Connect Wallet</span>
+            }
+          </button>
+          <div className="text-sm font-medium px-3 py-1 rounded-full" style={{ backgroundColor: 'var(--tg-theme-secondary-bg-color)' }}>
+            Credits: <span className={credits > 0 ? "text-emerald-600 font-bold" : "text-red-500 font-bold"}>{credits}</span>
+          </div>
         </div>
       </header>
 
@@ -264,10 +282,10 @@ function App() {
           {error && <p className="mt-4 text-red-500 text-center font-medium p-2 rounded border border-red-100">{error}</p>}
         </div>
 
-        {/* Audit Feed (Loader) */}
+        {/* Audit Story (Loader) */}
         {analyzing && (
           <div className="max-w-xl mx-auto mb-12 animate-fade-in">
-            <AuditFeed />
+            <AuditStory />
           </div>
         )}
 
@@ -285,17 +303,19 @@ function App() {
           </div>
         )}
 
-        {/* Deep Dive Modal */}
+        {/* Universal Ledger Alert Modal (Deep Dive) */}
         {showDeepDiveModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
             <div className="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full border border-slate-200 dark:bg-slate-900 dark:border-slate-700">
-              <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2">⚠️ Large Contract Detected</h3>
-              <p className="text-slate-600 dark:text-slate-300 mb-6">
-                This contract bytecode exceeds 10KB. A standard scan is insufficient.
+              <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2">⚠️ Universal Ledger Alert</h3>
+              <p className="text-slate-600 dark:text-slate-300 mb-6 font-medium">
+                Heuristic Analysis detects a massive contract ({'>'}24KB).
                 <br /><br />
-                <strong>Required: Deep Dive Audit</strong>
-                <br />
-                <span className="text-emerald-500 font-bold">Cost: 3 Credits</span>
+                <span className="opacity-70 font-normal">Standard auditing cannot guarantee safety for this volume of bytecode logic.</span>
+                <br /><br />
+                <span className="text-emerald-500 font-bold block mt-2 p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded text-center border border-emerald-100 dark:border-emerald-800">
+                  Recommend: Deep Dive (3 Credits)
+                </span>
               </p>
               <div className="flex gap-3">
                 <button
@@ -306,17 +326,17 @@ function App() {
                 </button>
                 <button
                   onClick={() => handleAudit(undefined, true)}
-                  className="flex-1 py-3 bg-emerald-600 text-white font-bold rounded hover:bg-emerald-700"
+                  className="flex-1 py-3 bg-emerald-600 text-white font-bold rounded hover:bg-emerald-700 shadow-lg shadow-emerald-500/20"
                 >
-                  Approve (3 Credits)
+                  Approve
                 </button>
               </div>
             </div>
           </div>
         )}
 
-        {/* Treasury Visuals */}
-        <TreasuryView />
+        {/* Treasury Flow Visuals */}
+        <TreasuryFlow />
 
       </main>
     </div>
