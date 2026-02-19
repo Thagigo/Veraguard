@@ -14,6 +14,18 @@ def init_db():
                 credits INTEGER DEFAULT 0
             )
         """)
+        
+        # [NEW] FIFO Credit Ledger
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS credit_ledger (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT,
+                amount_remaining REAL,
+                source_type TEXT,
+                created_at REAL
+            )
+        """)
+
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS verified_txs (
                 tx_hash TEXT PRIMARY KEY,
@@ -23,103 +35,123 @@ def init_db():
                 timestamp DATETIME
             )
         """)
+
+        # ... [Keep other tables] ...
+
+        # [NEW] Founder Ledger (Settlements & Carry)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS founder_ledger (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                amount REAL,
+                source TEXT, 
+                timestamp REAL
+            )
+        """)
+
+        # [NEW] Sheriff Rankings (Frontier)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS sheriff_rankings (
+                user_id TEXT PRIMARY KEY,
+                total_verifications INTEGER DEFAULT 0,
+                correct_verifications INTEGER DEFAULT 0,
+                accumulated_yield REAL DEFAULT 0.0,
+                last_active REAL
+            )
+        """)
+
+        # [NEW] Synapse Migration (Neural Bridge)
+        try:
+             cursor.execute("ALTER TABLE audit_reports ADD COLUMN synapse_synced INTEGER DEFAULT 0")
+        except:
+             pass # Already exists
+
+        # [NEW] Migration: Convert legacy credits to 'purchase' ledger entries
+        # Check if users have credits but no ledger entries
+        cursor.execute("SELECT user_id, credits FROM users WHERE credits > 0")
+        users_with_credits = cursor.fetchall()
         
-        # New tables for Rate Limiting & Double-Spend
-        cursor.execute('''CREATE TABLE IF NOT EXISTS processed_txs
-                 (tx_hash TEXT PRIMARY KEY, user_id TEXT, timestamp REAL)''')
-        cursor.execute('''CREATE TABLE IF NOT EXISTS scan_logs
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT, timestamp REAL)''')
-        
-        # [NEW] Hybrid Revenue & Referrals
-        cursor.execute('''CREATE TABLE IF NOT EXISTS subscriptions
-                 (user_id TEXT PRIMARY KEY, expiry REAL, tier TEXT DEFAULT 'standard')''')
-
-        cursor.execute('''CREATE TABLE IF NOT EXISTS referrals
-                 (code TEXT PRIMARY KEY, owner_id TEXT, owner_ip_hash TEXT, owner_ua_hash TEXT, uses INTEGER DEFAULT 0, earned_credits INTEGER DEFAULT 0)''')
-
-        cursor.execute('''CREATE TABLE IF NOT EXISTS referral_claims
-                 (referrer_id TEXT, referee_id TEXT, timestamp REAL, PRIMARY KEY (referrer_id, referee_id))''')
-
-        # [NEW] Ethical Watermarking & Anti-Spam
-        cursor.execute('''CREATE TABLE IF NOT EXISTS audit_reports
-                 (report_id TEXT PRIMARY KEY, report_hash TEXT, address TEXT, data TEXT, timestamp REAL)''')
-
-        cursor.execute('''CREATE TABLE IF NOT EXISTS referral_events
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT, code TEXT, ip_hash TEXT, timestamp REAL)''')
-
-        # [NEW] Sovereign Prize & Treasury
-        cursor.execute('''CREATE TABLE IF NOT EXISTS treasury_stats (
-            id INTEGER PRIMARY KEY CHECK (id = 1), 
-            total_volume_eth REAL DEFAULT 0, 
-            chest_balance_eth REAL DEFAULT 0, 
-            war_chest_eth REAL DEFAULT 0, 
-            last_updated REAL
-        )''')
-
-        cursor.execute('''CREATE TABLE IF NOT EXISTS daily_metrics (
-            day_timestamp INTEGER PRIMARY KEY, 
-            volume_eth REAL DEFAULT 0, 
-            tx_count INTEGER DEFAULT 0
-        )''')
-
-        cursor.execute('''CREATE TABLE IF NOT EXISTS payout_rounds (
-            round_id TEXT PRIMARY KEY, 
-            merkle_root TEXT, 
-            total_payout_eth REAL, 
-            winners_count INTEGER, 
-            metadata_json TEXT, 
-            timestamp REAL
-        )''')
-        
-        # [NEW] Anti-Fragile Ecosystem (Fatigue & Leading)
-        cursor.execute('''CREATE TABLE IF NOT EXISTS scan_daily_counts (
-            user_id TEXT, 
-            day_timestamp INTEGER, 
-            scan_count INTEGER DEFAULT 0,
-            PRIMARY KEY (user_id, day_timestamp)
-        )''')
-
-        # Initialize Treasury if empty
-        cursor.execute("INSERT OR IGNORE INTO treasury_stats (id, total_volume_eth, chest_balance_eth, war_chest_eth, last_updated) VALUES (1, 0, 0, 0, ?)", (time.time(),))
-          
-        # Update Referrals with flagging
-        try:
-            cursor.execute("ALTER TABLE referrals ADD COLUMN is_flagged BOOLEAN DEFAULT 0")
-        except sqlite3.OperationalError:
-            pass
-
-        # Migrations (idempotent)
-        try:
-            cursor.execute("ALTER TABLE verified_txs ADD COLUMN amount_usd REAL")
-        except sqlite3.OperationalError:
-            pass # Column likely exists
-        
-        try:
-            cursor.execute("ALTER TABLE referrals ADD COLUMN owner_ua_hash TEXT")
-        except sqlite3.OperationalError:
-            pass
-        
-        try:
-            cursor.execute("ALTER TABLE audit_reports ADD COLUMN vera_score INTEGER DEFAULT 0")
-        except sqlite3.OperationalError:
-            pass
-        
-        try:
-            cursor.execute("ALTER TABLE audit_reports ADD COLUMN finder_id TEXT")
-        except sqlite3.OperationalError:
-            pass
-
-        try:
-            cursor.execute("ALTER TABLE audit_reports ADD COLUMN is_first_finder INTEGER DEFAULT 0")
-        except sqlite3.OperationalError:
-            pass
-
-        try:
-            cursor.execute("ALTER TABLE audit_reports ADD COLUMN royalty_claimed_eth REAL DEFAULT 0")
-        except sqlite3.OperationalError:
-            pass
+        for u in users_with_credits:
+            uid, creds = u
+            # Check ledger
+            cursor.execute("SELECT 1 FROM credit_ledger WHERE user_id=?", (uid,))
+            if not cursor.fetchone():
+                print(f"Migrating {creds} credits for {uid} to Ledger (Purchase)")
+                cursor.execute("INSERT INTO credit_ledger (user_id, amount_remaining, source_type, created_at) VALUES (?, ?, 'purchase', ?)", 
+                               (uid, float(creds), time.time()))
 
         conn.commit()
+
+# --- SETTLEMENT & REVENUE HELPERS ---
+def record_founder_carry(amount: float, source: str):
+    """
+    Records revenue into the Founder's private ledger.
+    Source: 'settlement' (Expired Vouchers) or 'fee' (Purchase Carry).
+    """
+    with get_db() as conn:
+        c = conn.cursor()
+        c.execute("INSERT INTO founder_ledger (amount, source, timestamp) VALUES (?, ?, ?)", (amount, source, time.time()))
+        conn.commit()
+
+def expire_vouchers(cutoff_timestamp: float) -> float:
+    """
+    Expires all 'voucher' credits created before cutoff_timestamp.
+    Returns the total remaining amount that was expired.
+    """
+    with get_db() as conn:
+        c = conn.cursor()
+        
+        # 1. Find vouchers to expire
+        c.execute("SELECT id, user_id, amount_remaining FROM credit_ledger WHERE source_type='voucher' AND created_at < ? AND amount_remaining > 0", (cutoff_timestamp,))
+        rows = c.fetchall()
+        
+        if not rows:
+            return 0.0
+            
+        total_expired = 0.0
+        user_deductions = {} # user_id -> amount
+        ledger_ids = []
+
+        for r in rows:
+            lid, uid, amt = r
+            total_expired += amt
+            user_deductions[uid] = user_deductions.get(uid, 0.0) + amt
+            ledger_ids.append(lid)
+            
+        # 2. Update Users
+        for uid, amt in user_deductions.items():
+            c.execute("UPDATE users SET credits = credits - ? WHERE user_id=?", (amt, uid))
+            
+        # 3. Update Ledger (Expire them)
+        # Use executemany or just a IN clause
+        # SQLite limit on variables might be an issue for huge sets, but for now fine.
+        if ledger_ids:
+            placeholders = ','.join(['?'] * len(ledger_ids))
+            c.execute(f"UPDATE credit_ledger SET amount_remaining = 0 WHERE id IN ({placeholders})", ledger_ids)
+            
+        conn.commit()
+            
+        return total_expired
+
+def get_revenue_stats_24h():
+    """
+    Returns Founder Carry and Protocol Growth for last 24h.
+    """
+    cutoff = time.time() - 86400
+    with get_db() as conn:
+        c = conn.cursor()
+        
+        # Founder Carry (Last 24h)
+        c.execute("SELECT SUM(amount) FROM founder_ledger WHERE timestamp > ?", (cutoff,))
+        row = c.fetchone()
+        carry_24h = row[0] if row and row[0] else 0.0
+        
+        # Protocol Growth (New Users? Volume?)
+        # Let's say Volume ETH in last 24h
+        c.execute("SELECT SUM(amount_eth) FROM verified_txs WHERE timestamp > ?", (cutoff,))
+        row = c.fetchone()
+        volume_24h = row[0] if row and row[0] else 0.0
+        
+        return {"founder_carry": carry_24h, "protocol_growth_eth": volume_24h}
 
 @contextmanager
 def get_db():
@@ -129,7 +161,7 @@ def get_db():
     finally:
         conn.close()
 
-def db_add_credits(user_id: str, amount: int, tx_hash: str = None):
+def db_add_credits(user_id: str, amount: int, tx_hash: str = None, source_type: str = 'purchase'):
     with get_db() as conn:
         c = conn.cursor()
         
@@ -144,6 +176,11 @@ def db_add_credits(user_id: str, amount: int, tx_hash: str = None):
 
         c.execute("INSERT OR IGNORE INTO users (user_id, credits) VALUES (?, 0)", (user_id,))
         c.execute("UPDATE users SET credits = credits + ? WHERE user_id=?", (amount, user_id))
+        
+        # [NEW] Add to Ledger
+        c.execute("INSERT INTO credit_ledger (user_id, amount_remaining, source_type, created_at) VALUES (?, ?, ?, ?)",
+                  (user_id, float(amount), source_type, time.time()))
+        
         conn.commit()
 
 def get_credits(user_id: str) -> int:
@@ -160,6 +197,7 @@ def reset_credits(user_id: str):
     with get_db() as conn:
         c = conn.cursor()
         c.execute("UPDATE users SET credits = 0 WHERE user_id=?", (user_id,))
+        c.execute("DELETE FROM credit_ledger WHERE user_id=?", (user_id,)) # Clear ledger too
         conn.commit()
 
 def wipeout_user(user_id: str):
@@ -170,6 +208,7 @@ def wipeout_user(user_id: str):
         c = conn.cursor()
         # 1. Reset Credits
         c.execute("UPDATE users SET credits = 0 WHERE user_id=?", (user_id,))
+        c.execute("DELETE FROM credit_ledger WHERE user_id=?", (user_id,))
         
         # 2. Delete History & State
         c.execute("DELETE FROM verified_txs WHERE user_id=?", (user_id,))
@@ -187,15 +226,64 @@ def wipeout_user(user_id: str):
         
         conn.commit()
 
+def deduct_credits_fifo(user_id: str, amount: int) -> str:
+    """
+    Deducts credits using First-In-First-Out logic.
+    Returns the 'primary_source' (the source of the majority of credits used).
+    """
+    with get_db() as conn:
+        c = conn.cursor()
+        
+        # Check Total
+        c.execute("SELECT credits FROM users WHERE user_id=?", (user_id,))
+        row = c.fetchone()
+        if not row or row[0] < amount:
+            raise ValueError("Insufficient funds")
+
+        remaining_to_deduct = float(amount)
+        sources_used = {} # type -> amount
+        
+        # Fetch active ledger entries ordered by time
+        c.execute("SELECT id, amount_remaining, source_type FROM credit_ledger WHERE user_id=? AND amount_remaining > 0 ORDER BY created_at ASC", (user_id,))
+        entries = c.fetchall()
+        
+        for entry in entries:
+            eid, amt, src = entry
+            
+            deduct = min(amt, remaining_to_deduct)
+            
+            # Update Entry
+            new_amt = amt - deduct
+            c.execute("UPDATE credit_ledger SET amount_remaining = ? WHERE id=?", (new_amt, eid))
+            
+            # Track Source
+            sources_used[src] = sources_used.get(src, 0) + deduct
+            
+            remaining_to_deduct -= deduct
+            if remaining_to_deduct <= 0:
+                break
+        
+        if remaining_to_deduct > 0:
+             # Should not happen via the check above, but purely defensive
+             pass
+
+        # Update Aggregate
+        c.execute("UPDATE users SET credits = credits - ? WHERE user_id=?", (amount, user_id))
+        conn.commit()
+        
+        # Determine Primary Source
+        if not sources_used:
+            return "purchase" # Default fallback
+            
+        return max(sources_used, key=sources_used.get)
+
 def use_credit(user_id: str) -> bool:
-    current = get_credits(user_id)
-    if current > 0:
-        with get_db() as conn:
-            c = conn.cursor()
-            c.execute("UPDATE users SET credits = credits - 1 WHERE user_id=?", (user_id,))
-            conn.commit()
+    # Deprecated/Wrapper for legacy calls
+    try:
+        deduct_credits_fifo(user_id, 1)
         return True
-    return False
+    except:
+        return False
 
 def check_rate_limit(user_id: str, limit: int = 3, window_seconds: int = 86400) -> bool:
     """Returns True if user is within rate limit (Free Tier)."""
@@ -290,8 +378,14 @@ def processing_referral_reward(referrer_id: str, referee_id: str, reward: int = 
         # Prevent double claiming
         try:
             c.execute("INSERT INTO referral_claims (referrer_id, referee_id, timestamp) VALUES (?, ?, ?)", (referrer_id, referee_id, time.time()))
+            
             # Award credits
             c.execute("UPDATE users SET credits = credits + ? WHERE user_id=?", (reward, referrer_id))
+            
+            # [NEW] Ledger Entry (Treat Referral as Voucher/Grant)
+            c.execute("INSERT INTO credit_ledger (user_id, amount_remaining, source_type, created_at) VALUES (?, ?, 'voucher', ?)",
+                      (referrer_id, float(reward), time.time()))
+            
             c.execute("UPDATE referrals SET uses = uses + 1, earned_credits = earned_credits + ? WHERE owner_id=?", (reward, referrer_id))
             conn.commit()
             return True
@@ -391,7 +485,8 @@ def get_user_audit_history(user_id: str, limit: int = 5):
                 # [NEW] Premium Data Persistence
                 red_team_log = details.get("red_team_log", [])
                 report_hash = details.get("report_hash")
-                logic_dna_seq = details.get("logic_dna_seq") # Future proofing
+                logic_dna_seq = details.get("logic_dna_seq")
+                cost_deducted = details.get("cost_deducted", 3) # [FIX] Default to 3 if missing
             except:
                 scam_type = None
                 is_proxy = False
@@ -402,6 +497,7 @@ def get_user_audit_history(user_id: str, limit: int = 5):
                 red_team_log = []
                 report_hash = None
                 logic_dna_seq = None
+                cost_deducted = 3
 
             results.append({
                 "address": r[0],
@@ -415,7 +511,8 @@ def get_user_audit_history(user_id: str, limit: int = 5):
                 "risk_summary": risk_summary,
                 "red_team_log": red_team_log, # [NEW]
                 "report_hash": report_hash,   # [NEW]
-                "logic_dna_seq": logic_dna_seq # [NEW]
+                "logic_dna_seq": logic_dna_seq, # [NEW]
+                "cost": cost_deducted # [NEW]
             })
         return results
 
@@ -665,5 +762,118 @@ def record_royalty_claim(report_id_or_address: str, finder_id: str, amount_eth: 
         # Find the original report by this finder for this address
         # logic: update audit_reports set royalty_claimed_eth += amount where address=? and finder_id=?
         c.execute("UPDATE audit_reports SET royalty_claimed_eth = royalty_claimed_eth + ? WHERE address=? AND finder_id=?", (amount_eth, report_id_or_address, finder_id))
+        conn.commit()
+
+
+# --- TELEGRAM & GHOST AGENT HELPERS ---
+def create_otp(user_id: str):
+    import secrets
+    import time
+    code = secrets.token_hex(3).upper() # 6 chars
+    expiry = time.time() + 300 # 5 mins
+    with get_db() as conn:
+        c = conn.cursor()
+        c.execute("INSERT OR REPLACE INTO otp_codes (code, user_id, expiry) VALUES (?, ?, ?)", (code, user_id, expiry))
+        conn.commit()
+    return code
+
+def verify_and_link_telegram(otp_code: str, telegram_id: str):
+    with get_db() as conn:
+        c = conn.cursor()
+        c.execute("SELECT user_id, expiry FROM otp_codes WHERE code=?", (otp_code,))
+        row = c.fetchone()
+        
+        if not row:
+            return False, "Invalid Code"
+        
+        user_id, expiry = row
+        if time.time() > expiry:
+            return False, "Code Expired"
+            
+        # Link
+        c.execute("UPDATE users SET telegram_id=? WHERE user_id=?", (telegram_id, user_id))
+        # Cleanup
+        c.execute("DELETE FROM otp_codes WHERE code=?", (otp_code,))
+        conn.commit()
+        return True, user_id
+
+def get_telegram_user(telegram_id: str):
+    with get_db() as conn:
+        c = conn.cursor()
+        c.execute("SELECT user_id, credits FROM users WHERE telegram_id=?", (telegram_id,))
+        row = c.fetchone()
+        return row if row else None
+
+def get_pending_public_alerts():
+    with get_db() as conn:
+        c = conn.cursor()
+        # Find reports with Score < 50 that haven't been alerted
+        c.execute("SELECT report_id, address, vera_score, data FROM audit_reports WHERE vera_score < 50 AND is_public_alert_sent=0")
+        return c.fetchall()
+
+def mark_alert_sent(report_id: str):
+    with get_db() as conn:
+        c = conn.cursor()
+        c.execute("UPDATE audit_reports SET is_public_alert_sent=1 WHERE report_id=?", (report_id,))
+        conn.commit()
+
+def get_pending_syncs():
+    with get_db() as conn:
+        c = conn.cursor()
+        c.execute("SELECT report_id, report_hash, address, data FROM audit_reports WHERE is_drive_synced=0")
+        return c.fetchall()
+
+def mark_synced(report_id: str):
+    with get_db() as conn:
+        c = conn.cursor()
+        c.execute("UPDATE audit_reports SET is_drive_synced=1 WHERE report_id=?", (report_id,))
+        conn.commit()
+
+
+def get_executive_stats():
+    """
+    Returns high-level metrics for the Founder Dashboard.
+    """
+    with get_db() as conn:
+        c = conn.cursor()
+        
+        # 1. Total Carry
+        # (Check if table exists first? It should.)
+        try:
+            c.execute("SELECT SUM(amount) FROM founder_ledger")
+            row = c.fetchone()
+            total_carry = row[0] if row and row[0] else 0.0
+        except:
+            total_carry = 0.0
+        
+        # 2. Active Voucher Liability (Workforce Liquidity Pool Base)
+        c.execute("SELECT SUM(amount_remaining) FROM credit_ledger WHERE source_type='voucher'")
+        row = c.fetchone()
+        active_vouchers = row[0] if row and row[0] else 0.0
+        
+        # 3. Vault Balance
+        c.execute("SELECT chest_balance_eth FROM treasury_stats WHERE id=1")
+        row = c.fetchone()
+        vault_balance = row[0] if row and row[0] else 0.0
+        
+        return {
+            "total_carry_usd": total_carry,
+            "active_vouchers_usd": active_vouchers,
+            "vault_balance_eth": vault_balance
+        }
+
+# --- NEURAL BRIDGE (SYNAPSE) HELPER ---
+def get_pending_synapse_syncs():
+    """Returns reports that need to be pushed to the Neural Bridge (The Vault)."""
+    with get_db() as conn:
+        c = conn.cursor()
+        # Only sync BUSTS (Score < 50) or high-value findings
+        c.execute("SELECT report_id, report_hash, address, data, vera_score FROM audit_reports WHERE synapse_synced=0 AND vera_score < 50")
+        return c.fetchall()
+
+def mark_synapse_synced(report_id: str):
+    with get_db() as conn:
+        c = conn.cursor()
+        c.execute("UPDATE audit_reports SET synapse_synced=1 WHERE report_id=?", (report_id,))
         conn.commit()
 

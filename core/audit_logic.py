@@ -7,6 +7,7 @@ import time
 from . import cache
 from . import triage
 from . import hunter_agent
+from . import certificate # [NEW] Certificate Module
 
 # Use existing signatures from audit_logic.py or refactor.
 # For simplicity, we keep the signature checking directly here or import it 
@@ -141,7 +142,7 @@ def perform_deep_scan(bytecode: str, triage_data: dict) -> dict:
         "red_team_log": red_team_log
     }
 
-def check_contract(address: str, scan_type: str = "deep", rpc_url: str = "https://cloudflare-eth.com") -> str:
+def check_contract(address: str, scan_type: str = "deep", rpc_url: str = "https://cloudflare-eth.com", credit_source: str = "purchase") -> str:
     """
     Orchestrates the intelligent audit.
     scan_type: 'triage' (Fast) or 'deep' (Full).
@@ -152,7 +153,7 @@ def check_contract(address: str, scan_type: str = "deep", rpc_url: str = "https:
         rid = str(uuid.uuid4())
         ts = str(time.time())
         # safe hash
-        payload = f"{address}:{data.get('vera_score', 0)}:{ts}:{data.get('note', '')}"
+        payload = f"{address}:{data.get('vera_score', 0)}:{ts}:{data.get('note', '')}:SOURCE={credit_source}"
         rhash = hashlib.sha256(payload.encode()).hexdigest()
         
         data.update({
@@ -163,6 +164,14 @@ def check_contract(address: str, scan_type: str = "deep", rpc_url: str = "https:
             "milestones": [],
             "vitals": {"liquidity": "SIMULATED", "owner_risk": "UNKNOWN"}
         })
+
+        # [NEW] Generate Certificate for Simulation
+        try:
+             cert = certificate.generate_certificate(rid, rhash, address, data.get('vera_score', 0), data.get('warnings', []), credit_source)
+             data["certificate"] = cert
+        except Exception as e:
+             print(f"Sim Cert Gen Failed: {e}")
+
         return json.dumps(data)
 
     if "ghost" in address.lower():
@@ -310,6 +319,14 @@ def check_contract(address: str, scan_type: str = "deep", rpc_url: str = "https:
             "scan_type": scan_type,
             "red_team_log": red_team_log
         }
+
+        # [NEW] Generate Sovereign Certificate
+        try:
+             cert = certificate.generate_certificate(report_id, report_hash, address, vera_score, warnings, credit_source)
+             final_result["certificate"] = cert
+        except Exception as e:
+             print(f"Certificate Gen Failed: {e}")
+             final_result["certificate"] = None
 
         # --- 5. UPDATE CACHE (Only for Deep Scans?) ---
         if scan_type == 'deep':

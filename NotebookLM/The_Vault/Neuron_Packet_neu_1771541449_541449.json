@@ -1,0 +1,14 @@
+{
+  "synapse_id": "neu_1771541449_541449",
+  "timestamp": "2026-02-19T23:50:49.012920",
+  "verdict": "BUST_CONFIRMED",
+  "vera_score": 20,
+  "target_contract": "0xDEADBEEF_NEURAL_TEST",
+  "sheriff_notes": "Automated flagging of Recursive Reentrancy.",
+  "exploit_vector": "Recursive Reentrancy",
+  "technical_context": {
+    "report_hash": "hash123",
+    "raw_data_snippet": "{'risk_summary': 'Recursive Reentrancy', 'vitals': {'complexity': 'High'}}"
+  },
+  "instruction_to_brain": "Analyze this exploit pattern. Update Heuristics/FAQ if novel."
+}

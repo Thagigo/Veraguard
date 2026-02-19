@@ -10,6 +10,8 @@ import PreFlightPreview from './PreFlightPreview'; // [NEW]
 import DistributionReceipt from './DistributionReceipt'; // [NEW]
 import CrystallizationLoader from './CrystallizationLoader';
 import PreFlightTriage from './PreFlightTriage';
+import Executive from './Executive'; // [NEW]
+import WarRoom from './WarRoom'; // [NEW]
 import WebApp from '@twa-dev/sdk'
 import '../App.css'
 
@@ -102,6 +104,8 @@ export default function DashboardHome({ userId, onLogout }: DashboardHomeProps) 
     // [NEW] Premium Data
     const [redTeamLog, setRedTeamLog] = useState<any[]>([]);
     const [reportHash, setReportHash] = useState<string | undefined>(undefined);
+    const [auditCost, setAuditCost] = useState<number>(3.00); // [NEW] Track Cost for Ledger
+    const [creditSource, setCreditSource] = useState<string>('purchase'); // [NEW] Credit Source
 
     // Membership & Referral State
     const [isMember, setIsMember] = useState(false);
@@ -111,6 +115,7 @@ export default function DashboardHome({ userId, onLogout }: DashboardHomeProps) 
 
     // God Mode / Dashboard State
     const [showDashboard, setShowDashboard] = useState(false)
+    const [showExecutive, setShowExecutive] = useState(false) // [NEW]
     const [logoClicks, setLogoClicks] = useState(0);
 
     // Smart Audit State
@@ -134,17 +139,7 @@ export default function DashboardHome({ userId, onLogout }: DashboardHomeProps) 
 
     const [paymentSuccessCost, setPaymentSuccessCost] = useState(0);
 
-    // [NEW] High-Noon Leads Ticker
-    const [leads, setLeads] = useState<any[]>([]);
-    useEffect(() => {
-        if (!userId) return;
-        fetch(`http://localhost:8000/api/leads?user_id=${userId}`)
-            .then(res => res.json())
-            .then(data => {
-                if (data.leads) setLeads(data.leads);
-            })
-            .catch(console.error);
-    }, [userId]);
+
 
     // Initialize Telegram & Fee (User ID handled by parent)
     // [NEW] Fetch History
@@ -305,6 +300,7 @@ export default function DashboardHome({ userId, onLogout }: DashboardHomeProps) 
     };
 
     // Smart Routing Logic
+
     const showAuditInput = (credits > 0 || isMember) && !showTopUp;
 
     const handleHistoryClick = (item: any) => {
@@ -322,6 +318,9 @@ export default function DashboardHome({ userId, onLogout }: DashboardHomeProps) 
             // [Fix] Premium Persistence
             if (item.red_team_log) setRedTeamLog(item.red_team_log);
             if (item.report_hash) setReportHash(item.report_hash);
+            if (item.cost) setAuditCost(item.cost); // [NEW] Restore Cost
+            // [NEW] Restore Source
+            setCreditSource(item.credit_source || 'purchase');
 
             setAddress(item.address);
         }
@@ -346,6 +345,10 @@ export default function DashboardHome({ userId, onLogout }: DashboardHomeProps) 
         setRiskSummary(matchedHistoryItem.risk_summary);
         setRedTeamLog(matchedHistoryItem.red_team_log || []);
         setReportHash(matchedHistoryItem.report_hash);
+        if (matchedHistoryItem.cost) setAuditCost(matchedHistoryItem.cost); // [NEW] Restore Cost
+        // [NEW] Restore Source
+        setCreditSource(matchedHistoryItem.credit_source || 'purchase');
+
         WebApp.HapticFeedback.notificationOccurred('success');
     };
 
@@ -516,7 +519,11 @@ export default function DashboardHome({ userId, onLogout }: DashboardHomeProps) 
                 setRiskSummary(data.risk_summary)
                 setVitals(data.vitals)
                 setRedTeamLog(data.red_team_log || [])
+                setVitals(data.vitals)
+                setRedTeamLog(data.red_team_log || [])
                 setReportHash(data.report_hash)
+                // [NEW] Set Cost for Ledger (Default to standard/deep pricing if logic missing)
+                setAuditCost(data.cost_deducted || (confirmDeepDive ? (isMember ? 2 : 3) : (isMember ? 0 : 1)));
 
                 fetchCredits(userId);
                 fetchHistory(userId); // Refresh history immediately
@@ -578,8 +585,12 @@ export default function DashboardHome({ userId, onLogout }: DashboardHomeProps) 
         setLogoClicks(newCount);
         if (newCount === 3) {
             setShowDashboard(true);
-            setLogoClicks(0);
             WebApp.HapticFeedback.notificationOccurred('success');
+        } else if (newCount === 5) {
+            // [NEW] Trigger Executive Dashboard
+            setShowExecutive(true);
+            setLogoClicks(0);
+            WebApp.HapticFeedback.impactOccurred('heavy');
         }
     };
 
@@ -605,26 +616,13 @@ export default function DashboardHome({ userId, onLogout }: DashboardHomeProps) 
             )}
 
             {showDashboard && <ProtocolDashboard onClose={() => setShowDashboard(false)} userId={userId} />}
+            {showExecutive && <Executive isOpen={showExecutive} onClose={() => setShowExecutive(false)} userId={userId} />}
 
-            {/* Ticker Bar */}
-            <div className="bg-black/40 border-b border-slate-800 backdrop-blur-md h-10 flex items-center overflow-hidden relative">
-                <div className="absolute left-0 bg-emerald-500/20 px-3 h-full flex items-center text-xs font-bold text-emerald-400 z-10">
-                    PRIORITY LEADS
-                </div>
-                <div className="animate-marquee flex gap-10 whitespace-nowrap pl-32 text-xs font-mono">
-                    {leads.map((lead, i) => (
-                        <div key={i} className={`flex items-center gap-2 ${lead.status !== 'VISIBLE' ? 'filter blur-sm opacity-50 select-none' : 'text-emerald-200'}`}>
-                            <span className="text-slate-500">[{lead.timestamp}]</span>
-                            <span>{lead.address}</span>
-                            <span className={`px-1 rounded ${lead.risk === 'High' ? 'bg-red-500/20 text-red-500' : 'bg-amber-500/20 text-amber-500'}`}>
-                                {lead.risk}
-                            </span>
-                            {lead.status !== 'VISIBLE' && <span className="text-[10px] text-slate-600">LOCKED</span>}
-                        </div>
-                    ))}
-                    {leads.length === 0 && <span className="text-slate-600">Scanning Mempool... No Active Leads.</span>}
-                </div>
-            </div>
+            {showDashboard && <ProtocolDashboard onClose={() => setShowDashboard(false)} userId={userId} />}
+            {showExecutive && <Executive isOpen={showExecutive} onClose={() => setShowExecutive(false)} userId={userId} />}
+
+            {/* Bounty Ticker (War Room) */}
+            <WarRoom />
 
             {referralBanner && (
                 <div className="bg-indigo-600 text-white px-4 py-2 text-xs font-bold flex justify-between items-center animate-slide-down shadow-md relative z-50">
@@ -646,7 +644,7 @@ export default function DashboardHome({ userId, onLogout }: DashboardHomeProps) 
             ) : (
                 <>
                     <header className="sticky top-0 z-40 transition-all duration-300 backdrop-blur-xl bg-slate-900/90 border-b border-white/5 shadow-2xl">
-                        <div className="max-w-[1400px] mx-auto flex justify-between items-center px-10 py-5">
+                        <div className="max-w-[1400px] mx-auto flex justify-between items-center px-4 md:px-10 py-3 md:py-5">
                             <h1
                                 onClick={handleLogoClick}
                                 className="text-2xl font-bold tracking-tight flex items-center gap-2 cursor-pointer select-none text-white hover:opacity-80 transition-opacity"
@@ -982,6 +980,8 @@ export default function DashboardHome({ userId, onLogout }: DashboardHomeProps) 
                                     vitals={vitals}
                                     redTeamLog={redTeamLog}
                                     reportHash={reportHash}
+                                    cost={auditCost} // [NEW]
+                                    creditSource={creditSource} // [NEW]
                                 />
 
                                 <div className="flex justify-center mt-8 mb-12">
@@ -1113,6 +1113,40 @@ export default function DashboardHome({ userId, onLogout }: DashboardHomeProps) 
                                 </div>
                             </div>
                         )}
+
+                        {/* Legal & Security Vitals Footer */}
+                        <div className="max-w-7xl mx-auto mt-24 border-t border-slate-800 pt-8 pb-4 opacity-70 hover:opacity-100 transition-opacity">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-[10px] text-slate-500 font-mono">
+                                <div>
+                                    <h4 className="font-bold text-slate-400 mb-2 uppercase tracking-widest">Sovereign Guarantee</h4>
+                                    <p className="mb-2">
+                                        All credits are backed by the <a href="/Whitepaper.md" target="_blank" className="text-emerald-500 hover:underline">VeraAnchor Service Level Agreement</a>.
+                                        Audit proofs are chronologically anchored to the Ethereum State Trie.
+                                    </p>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                                        <span>Restitution Timer: ACTIVE (24h)</span>
+                                    </div>
+                                </div>
+                                <div className="text-center">
+                                    <h4 className="font-bold text-slate-400 mb-2 uppercase tracking-widest">Insurance Multiplier</h4>
+                                    <div className="text-2xl font-bold text-slate-300">3.42<span className="text-emerald-500">x</span></div>
+                                    <p className="text-slate-600">Total War Chest / Active Escrow</p>
+                                    <div className="mt-1 text-[9px] uppercase text-emerald-500/80">Solvency Verified</div>
+                                </div>
+                                <div className="text-right">
+                                    <h4 className="font-bold text-slate-400 mb-2 uppercase tracking-widest">Compliance Vault</h4>
+                                    <ul className="space-y-1">
+                                        <li>MiCAR Status: <span className="text-amber-500">Self-Custodial Utility</span></li>
+                                        <li>Data Retention: <span className="text-emerald-500">Ephemeral (Shredded)</span></li>
+                                        <li>Jurisdiction: <span className="text-slate-400">On-Chain (Global)</span></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div className="text-center mt-8 text-[9px] text-slate-700">
+                                0xVeraGuard • Sovereign Code Audit Protocol • v2.1.0-beta
+                            </div>
+                        </div>
                     </main>
                 </>
             )

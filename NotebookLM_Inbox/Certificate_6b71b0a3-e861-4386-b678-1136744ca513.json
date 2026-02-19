@@ -1,0 +1,29 @@
+{
+    "header": {
+        "title": "Sovereign Audit Certificate",
+        "issuer": "VeraGuard Protocol",
+        "timestamp": 1771534570.2586718,
+        "version": "1.0"
+    },
+    "target": {
+        "address": "0x...huge",
+        "audit_type": "Deep Dive"
+    },
+    "vitals": {
+        "vera_score": 45,
+        "report_hash": "9ffe02a88ae9d2889177b8110e174001e537f1c8a3c8991093f9219cd46b8338",
+        "signature_verified": true
+    },
+    "service_level_proof": {
+        "anchor_contract": "VeraAnchor.sol",
+        "anchor_tx": "0xaf7387f39daf1b1ff9460234345ff84992a9d15ca7dd00dcdd470427432e6929",
+        "sla_status": "FULFILLED (<24h)"
+    },
+    "treasury_split_verification": {
+        "vault": "60%",
+        "founder": "25%",
+        "war_chest": "15%",
+        "status": "Math Verified (VeraSplitter.sol)"
+    },
+    "forensic_notice": "This certificate serves as cryptographic proof of diligence. Not insurance."
+}

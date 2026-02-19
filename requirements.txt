@@ -6,3 +6,4 @@ pydantic
 requests
 web3
 eth-account
+python-telegram-bot

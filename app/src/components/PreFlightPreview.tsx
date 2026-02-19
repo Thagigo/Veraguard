@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface PreFlightPreviewProps {
@@ -8,6 +9,8 @@ interface PreFlightPreviewProps {
 }
 
 export default function PreFlightPreview({ amount, costEth, onConfirm, onCancel }: PreFlightPreviewProps) {
+    const [acceptedTerms, setAcceptedTerms] = useState(false);
+
     return (
         <AnimatePresence>
             <motion.div
@@ -61,6 +64,25 @@ export default function PreFlightPreview({ amount, costEth, onConfirm, onCancel 
                         </div>
                     </div>
 
+                    <div className="mb-4 bg-slate-800/30 p-3 rounded-lg border border-slate-700/50">
+                        <label className="flex items-start gap-3 cursor-pointer group">
+                            <div className="relative flex items-center">
+                                <input
+                                    type="checkbox"
+                                    checked={acceptedTerms}
+                                    onChange={(e) => setAcceptedTerms(e.target.checked)}
+                                    className="peer h-5 w-5 cursor-pointer appearance-none rounded border border-slate-500 bg-slate-800 transition-all checked:border-emerald-500 checked:bg-emerald-500 hover:border-emerald-400"
+                                />
+                                <svg className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity" viewBox="0 0 14 14" fill="none">
+                                    <path d="M3 8L6 11L11 3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                            </div>
+                            <span className="text-xs text-slate-400 leading-tight select-none">
+                                I acknowledge the <a href="/Whitepaper.md" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline font-bold" onClick={(e) => e.stopPropagation()}>Sovereign Utility Terms</a>: Credits are non-refundable and dedicated to audit services under the Service-Level Guarantee.
+                            </span>
+                        </label>
+                    </div>
+
                     <div className="flex gap-3">
                         <button
                             onClick={onCancel}
@@ -70,7 +92,10 @@ export default function PreFlightPreview({ amount, costEth, onConfirm, onCancel 
                         </button>
                         <button
                             onClick={onConfirm}
-                            className="flex-1 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/20 transition-all active:scale-95"
+                            disabled={!acceptedTerms}
+                            className={`flex-1 py-3 font-bold rounded-xl shadow-lg transition-all active:scale-95 ${acceptedTerms
+                                ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/20'
+                                : 'bg-slate-700 text-slate-500 cursor-not-allowed'}`}
                         >
                             Sign & Inject
                         </button>

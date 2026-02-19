@@ -59,7 +59,15 @@ class AuditRequest(BaseModel):
 class ScanRequest(BaseModel):
     address: str
 
+class OtpRequest(BaseModel):
+    user_id: str
+
 # --- Endpoints ---
+
+@app.post("/api/user/otp")
+def generate_otp_endpoint(req: OtpRequest):
+    code = database.create_otp(req.user_id)
+    return {"status": "generated", "otp": code, "expiry": "5 minutes"}
 
 @app.get("/")
 async def root():
@@ -94,12 +102,14 @@ def process_payment(req: PaymentRequest, request: Request):
             amount_eth = amount_usd / eth_price
             database.activate_subscription(req.user_id)
             # Bonus Credits for Subscription
-            database.db_add_credits(req.user_id, 50, req.tx_hash) # 50 Credits
+            # [FIX] Source = 'voucher' for Vera-Pass
+            database.db_add_credits(req.user_id, 50, req.tx_hash, source_type='voucher') 
         else:
             # Credit Bundle: $3.00 per credit
             amount_usd = req.credits * 3.00
             amount_eth = amount_usd / eth_price
-            database.db_add_credits(req.user_id, req.credits, req.tx_hash)
+            # [FIX] Source = 'purchase' for ETH Bundles
+            database.db_add_credits(req.user_id, req.credits, req.tx_hash, source_type='purchase')
 
         # Record Transaction
         database.record_tx(req.tx_hash, req.user_id, amount_eth, amount_usd)
@@ -308,18 +318,23 @@ def audit_contract(request: AuditRequest):
              raise HTTPException(status_code=402, detail=detail)
     
     # 3. Deduct Credits
+    credit_source = "free_tier"
     if not used_free_tier:
-        for _ in range(cost):
-            database.use_credit(request.user_id)
+        try:
+             # [FIX] FIFO Deduction & Source Tracking
+             credit_source = database.deduct_credits_fifo(request.user_id, cost)
+        except ValueError as e:
+             raise HTTPException(status_code=402, detail=str(e))
 
     # Determine Scan Type
     scan_type = "triage" if request.bypass_deep_dive else "deep"
 
     try:
-        result_json = check_contract(request.address, scan_type=scan_type)
+        result_json = check_contract(request.address, scan_type=scan_type, credit_source=credit_source)
         result = json.loads(result_json)
         result['cost_deducted'] = 0 if used_free_tier else cost
         result['plan'] = "Free Tier" if used_free_tier else "Premium"
+        result['credit_source'] = credit_source # [NEW] Pass Source to Frontend
         
         # [NEW] Add Premium Badge Logic if Deep Scan
         if scan_type == 'deep':
@@ -328,10 +343,11 @@ def audit_contract(request: AuditRequest):
         # [NEW] Save Report with Score & Finder ID
         if 'report_id' in result:
              # Use the user_id from the request as the finder
-             database.save_audit_report(result['report_id'], result['report_hash'], request.address, result_json, result.get('vera_score', 0), request.user_id)
+             # [FIX] Save the MODIFIED result (with cost & badges) to DB, not the raw one.
+             final_json = json.dumps(result)
+             database.save_audit_report(result['report_id'], result['report_hash'], request.address, final_json, result.get('vera_score', 0), request.user_id)
         
         return result
-
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -440,6 +456,26 @@ app.include_router(governance_router, prefix="/api/governance", tags=["Governanc
 def get_leads(user_id: str):
     from .sheriff_logic import sheriff_engine
     return sheriff_engine.get_visible_leads(user_id)
+
+@app.get("/api/executive")
+def get_executive_dashboard(user_id: str):
+    # Security: In real app, verify user_id is the Founder/Admin.
+    # For now, we allow any user who knows this endpoint (or UI triggers it).
+    # if user_id != FOUNDER_ID: raise HTTPException(403)
+    try:
+        stats = database.get_executive_stats()
+        return stats
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/bounty_feed")
+def get_bounty_feed():
+    try:
+        from . import frontier_logic
+        return frontier_logic.get_recent_bounties(limit=10)
+    except Exception as e:
+        print(f"Bounty Feed Error: {e}")
+        return []
 
 @app.get("/api/history/{user_id}")
 def get_user_history_endpoint(user_id: str):
