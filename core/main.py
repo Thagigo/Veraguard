@@ -75,7 +75,8 @@ def check_credits(user_id: str):
     creds = database.get_credits(user_id)
     sub_expiry = database.get_subscription_status(user_id)
     is_member = sub_expiry is not None and sub_expiry > time.time()
-    return {"credits": creds, "is_member": is_member}
+    lifetime_spend_eth = database.get_lifetime_spend_eth(user_id)
+    return {"credits": creds, "is_member": is_member, "lifetime_spend_eth": lifetime_spend_eth}
 
 @app.post("/api/pay")
 def process_payment(req: PaymentRequest, request: Request):
@@ -104,8 +105,8 @@ def process_payment(req: PaymentRequest, request: Request):
         database.record_tx(req.tx_hash, req.user_id, amount_eth, amount_usd)
         database.log_daily_volume(amount_eth) # [NEW] Track daily volume for VWA
         
-        # [AUTONOMOUS BRAIN] Refill Scout Budget (10% of revenue)
-        scout.scout.refill_budget(0.10) # Mock 10%
+        # [AUTONOMOUS BRAIN] Refill Scout Budget (15% of revenue - War Chest)
+        scout.scout.refill_budget(0.15)
 
         # 2. Process Referral
         if req.referral_code:
@@ -151,20 +152,22 @@ def process_payment(req: PaymentRequest, request: Request):
     current_credits = database.get_credits(req.user_id)
     sub_status = database.get_subscription_status(req.user_id)
     is_member = sub_status is not None
+    lifetime_spend = database.get_lifetime_spend_eth(req.user_id)
     
     return {
         "status": "confirmed", 
         "credits": current_credits, 
         "is_member": is_member,
-        "subscription_expiry": sub_status
+        "subscription_expiry": sub_status,
+        "lifetime_spend_eth": lifetime_spend
     }
 
 @app.post("/api/referral/create")
 def create_referral(req: ReferralCreateRequest, request: Request):
-    # 1. Eligibility Gate ($30 USD)
-    spend = database.get_lifetime_spend(req.user_id)
-    if spend < 30.0:
-        raise HTTPException(status_code=403, detail=f"Eligibility Check Failed: Lifetime spend ${spend:.2f} < $30.00")
+    # 1. Eligibility Gate (0.01 ETH)
+    spend_eth = database.get_lifetime_spend_eth(req.user_id)
+    if spend_eth < 0.01:
+        raise HTTPException(status_code=403, detail=f"Eligibility Check Failed: Lifetime spend {spend_eth:.4f} ETH < 0.01 ETH")
         
     # 2. Capture Fingerprint
     client_ip = request.client.host
@@ -248,17 +251,16 @@ def audit_contract(request: AuditRequest):
     
     if complexity == "Deep Dive":
         if request.bypass_deep_dive:
-             cost = 1 # Force Standard Price
+             cost = 0 if is_member else 1 # Free Triage for Members
         else:
              # [MEMBER PERK] 33% Discount (3 -> 2 Credits)
              cost = 2 if is_member else 3
     else:
-        cost = 1
+        cost = 0 if is_member else 1
 
     # Deduct Credit if not free
     # (Assuming we deduct credits here)
-    if not database.use_credit(request.user_id):
-          pass # or raise insufficient funds, but original code didn't force it?
+    # [FIX] Removed duplicate deduction. We only deduct in step 3.
 
     # [NEW] Sheriff's Commission (Royalty)
     # If this audit had a "fee" (cost), we pay royalty to first finder.
@@ -310,11 +312,18 @@ def audit_contract(request: AuditRequest):
         for _ in range(cost):
             database.use_credit(request.user_id)
 
+    # Determine Scan Type
+    scan_type = "triage" if request.bypass_deep_dive else "deep"
+
     try:
-        result_json = check_contract(request.address)
+        result_json = check_contract(request.address, scan_type=scan_type)
         result = json.loads(result_json)
         result['cost_deducted'] = 0 if used_free_tier else cost
         result['plan'] = "Free Tier" if used_free_tier else "Premium"
+        
+        # [NEW] Add Premium Badge Logic if Deep Scan
+        if scan_type == 'deep':
+             result['badges'] = ["VERIFIED_DEEP_SCAN", "PREMIUM_AUDIT"]
         
         # [NEW] Save Report with Score & Finder ID
         if 'report_id' in result:
@@ -386,6 +395,24 @@ def reset_user_credits(request: Request):
     database.reset_credits(user_id)
     return {"status": "reset", "credits": 0}
 
+@app.post("/api/debug/wipeout")
+def wipeout_user_data(request: Request):
+    """
+    DEBUG: Deletes ALL data for the calling user.
+    """
+    import asyncio
+    async def parse_body():
+        return await request.json()
+    
+    body = asyncio.run(parse_body())
+    user_id = body.get("user_id")
+    
+    if not user_id:
+         user_id = "user_test"
+
+    database.wipeout_user(user_id)
+    return {"status": "wiped", "message": "User data permanently deleted."}
+
 # --- Sheriff's Frontier Endpoints ---
 
 @app.get("/api/shame-wall")
@@ -413,3 +440,7 @@ app.include_router(governance_router, prefix="/api/governance", tags=["Governanc
 def get_leads(user_id: str):
     from .sheriff_logic import sheriff_engine
     return sheriff_engine.get_visible_leads(user_id)
+
+@app.get("/api/history/{user_id}")
+def get_user_history_endpoint(user_id: str):
+    return database.get_user_audit_history(user_id)

@@ -50,7 +50,7 @@ export default function PreFlightPreview({ amount, costEth, onConfirm, onCancel 
                                 </div>
                             </div>
                             <div className="text-right">
-                                <div className="text-sm font-bold text-white">10%</div>
+                                <div className="text-sm font-bold text-white">15%</div>
                                 <div className="text-xs text-slate-500">Allocation</div>
                             </div>
                         </div>

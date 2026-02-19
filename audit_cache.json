@@ -30,5 +30,73 @@
             ],
             "note": "Audit based on Verified Intelligence | Hunter Deep Analysis Triggered"
         }
+    },
+    "994b83666dd6a725c0a850c9661603edac2a374206ac86d2ec06b16f70d2a1a7": {
+        "timestamp": 1771502304.6215825,
+        "result": {
+            "report_id": "36100223-5fd5-4f51-92d8-c565dca258d6",
+            "report_hash": "1df40ceab8c36bb75121538ff2e525ace0ab7f0309f3f36b27c73d9e64558887",
+            "timestamp": "1771502304.6212895",
+            "vera_score": 60,
+            "warnings": [
+                "DETECTED: Legacy Math Overflow"
+            ],
+            "note": "Triage Analysis Complete | Hunter Deep Analysis Triggered",
+            "milestones": [
+                {
+                    "step": "Bytecode Extraction",
+                    "status": "complete",
+                    "details": "Fetched from Chain"
+                },
+                {
+                    "step": "Decompilation",
+                    "status": "complete",
+                    "details": "AST Generated"
+                },
+                {
+                    "step": "Signature Check",
+                    "status": "complete",
+                    "details": "Checked 3/3 Critical Patterns"
+                },
+                {
+                    "step": "Heuristic Scan",
+                    "status": "complete",
+                    "details": "VeraGuard Knowledge Base"
+                },
+                {
+                    "step": "Deep Hunter Analysis",
+                    "status": "complete",
+                    "details": "Gemini 3 Pro Simulation"
+                }
+            ],
+            "risk_summary": "NOTICE: Codebase contains centralized functions. Owner risk present.",
+            "vitals": {
+                "liquidity": "HIGH (>$500k)",
+                "owner_risk": "ACTIVE ADMIN",
+                "upgradeability": "IMMUTABLE"
+            },
+            "is_proxy": false,
+            "scan_type": "deep",
+            "red_team_log": [
+                {
+                    "vector": "Flash Loan Attack",
+                    "status": "Attempted",
+                    "verdict": "RESILIENT",
+                    "details": "Simulating Liquidity Drain... [RESILIENT]"
+                },
+                {
+                    "vector": "Reentrancy",
+                    "status": "Attempted",
+                    "verdict": "RESILIENT",
+                    "details": "Attempting Recursive Call... [RESILIENT]"
+                },
+                {
+                    "vector": "Ownership Override",
+                    "status": "Attempted",
+                    "verdict": "RESILIENT",
+                    "details": "Bypassing Admin Logic... [RESILIENT]"
+                }
+            ]
+        }
     }
 }

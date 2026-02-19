@@ -92,6 +92,24 @@ const ProtocolDashboard = ({ onClose, userId }: { onClose: () => void, userId: s
                         >
                             ⚠️ Reset My Credits
                         </button>
+
+                        <button
+                            onClick={() => {
+                                if (confirm("DANGER: This will delete ALL your data (credits, audits, history). Are you sure?")) {
+                                    fetch('http://localhost:8000/api/debug/wipeout', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ user_id: userId })
+                                    }).then(() => {
+                                        alert("SYSTEM WIPEOUT COMPLETE. Reloading...");
+                                        window.location.reload();
+                                    });
+                                }
+                            }}
+                            className="px-3 py-2 bg-red-600 text-white text-xs font-bold rounded hover:bg-red-700 transition-all shadow-[0_0_15px_rgba(220,38,38,0.5)] animate-pulse"
+                        >
+                            ☢️ WIPEOUT (Fresh Start)
+                        </button>
                     </div>
                 </div>
 

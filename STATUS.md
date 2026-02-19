@@ -50,3 +50,8 @@
 - **2026-02-19**: **Governance & Sybil Defense**: Wired governance_router, verified Royalty Commission (2%) and Fatigue Factor (Anti-Spam) via /api/governance/sybil_test.
 - **2026-02-19**: **Critical Stability Fixes**: Resolved empty Vault issue (database return logic) and fixed Infinite Logout Loop (session persistence).
 - **2026-02-19**: **System Hardening**: Validated end-to-end flows for User History, Credit Persistence, and Secure Session Reset.
+- [2026-02-19] **Ledger Overhaul & Persistence**:
+    -   **Protocol Ledger Redesign**: Implemented Vertical "Distribution Flow" tracking user funds into Security Vault (60%), Sheriff Yield (25%), and Scout War Chest (15%).
+    -   **Data Persistence**: Secured Premium Audit Data (`red_team_log`, `report_hash`) in `core/database.py`, enabling permanent access to reports.
+    -   **Deep Link Integration**: Added "VIEW LEDGER" button to `Vault.tsx` for instant verification of past audits.
+    -   **Verification**: Validated backend data integrity via custom Python script and manual frontend review.

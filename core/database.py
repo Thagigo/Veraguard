@@ -162,6 +162,31 @@ def reset_credits(user_id: str):
         c.execute("UPDATE users SET credits = 0 WHERE user_id=?", (user_id,))
         conn.commit()
 
+def wipeout_user(user_id: str):
+    """
+    DEBUG ONLY: Deletes ALL data for a user to simulate a fresh start.
+    """
+    with get_db() as conn:
+        c = conn.cursor()
+        # 1. Reset Credits
+        c.execute("UPDATE users SET credits = 0 WHERE user_id=?", (user_id,))
+        
+        # 2. Delete History & State
+        c.execute("DELETE FROM verified_txs WHERE user_id=?", (user_id,))
+        c.execute("DELETE FROM processed_txs WHERE user_id=?", (user_id,))
+        c.execute("DELETE FROM scan_logs WHERE user_id=?", (user_id,))
+        c.execute("DELETE FROM subscriptions WHERE user_id=?", (user_id,))
+        c.execute("DELETE FROM scan_daily_counts WHERE user_id=?", (user_id,))
+        
+        # 3. Delete Audit Reports found by user
+        c.execute("DELETE FROM audit_reports WHERE finder_id=?", (user_id,))
+        
+        # 4. Delete Referrals owned by user
+        c.execute("DELETE FROM referrals WHERE owner_id=?", (user_id,))
+        c.execute("DELETE FROM referral_claims WHERE referrer_id=? OR referee_id=?", (user_id, user_id))
+        
+        conn.commit()
+
 def use_credit(user_id: str) -> bool:
     current = get_credits(user_id)
     if current > 0:
@@ -201,6 +226,14 @@ def tx_exists(tx_hash: str) -> bool:
         cursor = conn.cursor()
         row = cursor.execute("SELECT 1 FROM verified_txs WHERE tx_hash = ?", (tx_hash,)).fetchone()
         return row is not None
+
+def get_lifetime_spend_eth(user_id: str) -> float:
+    """Returns total ETH spent by user."""
+    with get_db() as conn:
+        c = conn.cursor()
+        c.execute("SELECT SUM(amount_eth) FROM verified_txs WHERE user_id=?", (user_id,))
+        result = c.fetchone()[0]
+        return result if result else 0.0
 
 def get_lifetime_spend(user_id: str) -> float:
     """Returns total USD spent by user."""
@@ -321,6 +354,68 @@ def get_wall_of_shame(limit: int = 5):
                 "scam_type": scam_type,
                 "report_id": r[4],
                 "finder_display": finder_display
+            })
+        return results
+
+def get_user_audit_history(user_id: str, limit: int = 5):
+    """
+    Returns last {limit} unique addresses scanned by the user.
+    """
+    with get_db() as conn:
+        c = conn.cursor()
+        # Get unique addresses, taking the most recent one for each
+        query = """
+            SELECT address, vera_score, MAX(timestamp) as last_scan, data
+            FROM audit_reports
+            WHERE finder_id = ?
+            GROUP BY address
+            ORDER BY last_scan DESC
+            LIMIT ?
+        """
+        c.execute(query, (user_id, limit))
+        rows = c.fetchall()
+
+        results = []
+        import json
+        for r in rows:
+            try:
+                details = json.loads(r[3])
+                is_proxy = details.get("is_proxy", False)
+                
+                # [Optimization] Return full display data for instant "View Report"
+                warnings = details.get("warnings", [])
+                milestones = details.get("milestones", [])
+                vitals = details.get("vitals", None)
+                risk_summary = details.get("risk_summary") 
+                
+                # [NEW] Premium Data Persistence
+                red_team_log = details.get("red_team_log", [])
+                report_hash = details.get("report_hash")
+                logic_dna_seq = details.get("logic_dna_seq") # Future proofing
+            except:
+                scam_type = None
+                is_proxy = False
+                warnings = []
+                milestones = []
+                vitals = None
+                risk_summary = None
+                red_team_log = []
+                report_hash = None
+                logic_dna_seq = None
+
+            results.append({
+                "address": r[0],
+                "score": r[1],
+                "timestamp": r[2],
+                "scam_type": risk_summary,
+                "is_proxy": is_proxy,
+                "warnings": warnings,
+                "milestones": milestones,
+                "vitals": vitals,
+                "risk_summary": risk_summary,
+                "red_team_log": red_team_log, # [NEW]
+                "report_hash": report_hash,   # [NEW]
+                "logic_dna_seq": logic_dna_seq # [NEW]
             })
         return results
 

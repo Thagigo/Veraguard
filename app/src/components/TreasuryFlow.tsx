@@ -82,9 +82,16 @@ export default function TreasuryFlow({ trigger, amount }: TreasuryFlowProps) {
                 </div>
 
                 <div className="mt-6 text-center">
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-slate-400 mb-4">
                         Verifiable on-chain via <a href="#" className="underline decoration-dotted hover:text-emerald-500">VeraSplitter.sol</a>
                     </p>
+
+                    <button
+                        onClick={() => window.dispatchEvent(new CustomEvent('open-protocol-dashboard'))}
+                        className="px-6 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors uppercase tracking-wider flex items-center gap-2 mx-auto"
+                    >
+                        <span>📜</span> Open Protocol Ledger
+                    </button>
                 </div>
 
             </div>

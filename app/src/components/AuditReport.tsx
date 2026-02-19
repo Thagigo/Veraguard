@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import LogicDNA from './LogicDNA';
+import ProtocolLedger from './ProtocolLedger';
 
 interface Milestone {
     step: string;
@@ -10,6 +12,14 @@ interface Milestone {
 interface Vitals {
     liquidity: string;
     owner_risk: string;
+    upgradeability?: string;
+}
+
+interface RedTeamLog {
+    vector: string;
+    status: string;
+    verdict: string;
+    details: string;
 }
 
 interface Props {
@@ -18,20 +28,19 @@ interface Props {
     riskSummary?: string;
     milestones?: Milestone[];
     vitals?: Vitals;
-    onClose?: () => void; // Added onClose prop for potential modal usage
+    redTeamLog?: RedTeamLog[]; // New Prop
+    reportHash?: string;       // New Prop
+    onClose?: () => void;
 }
 
-const AuditReport: React.FC<Props> = ({ score, warnings, riskSummary, milestones, vitals, onClose }) => {
+const AuditReport: React.FC<Props> = ({ score, warnings, riskSummary, milestones, vitals, redTeamLog, reportHash, onClose }) => {
     const [expandedMilestone, setExpandedMilestone] = useState<number | null>(null);
     const [showVaultLock, setShowVaultLock] = useState(false);
+    const [showLedger, setShowLedger] = useState(false);
 
     const isSafe = score >= 95;
     const pulseColor = score >= 80 ? 'bg-emerald-500' : score >= 50 ? 'bg-amber-500' : 'bg-red-500';
     const textColor = score >= 80 ? 'text-emerald-500' : score >= 50 ? 'text-amber-500' : 'text-red-500';
-
-    // New variables for score-based styling, adapted from the provided snippet
-    const scoreColor = score > 80 ? 'text-emerald-400' : score > 50 ? 'text-amber-400' : 'text-red-500';
-    const borderColor = score > 80 ? 'border-emerald-500' : score > 50 ? 'border-amber-500' : 'border-red-500';
 
     useEffect(() => {
         // Emotional Gravity: Bust
@@ -70,7 +79,7 @@ const AuditReport: React.FC<Props> = ({ score, warnings, riskSummary, milestones
             <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 overflow-hidden relative">
                 {/* Certified Safe Badge */}
                 {isSafe && (
-                    <div className="absolute top-0 right-0 p-4">
+                    <div className="absolute top-0 right-0 p-4 z-20">
                         <div className="flex items-center gap-2 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 px-3 py-1 rounded-full text-xs font-bold shadow-sm border border-emerald-200 dark:border-emerald-800">
                             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
                             CERTIFIED SAFE
@@ -78,7 +87,23 @@ const AuditReport: React.FC<Props> = ({ score, warnings, riskSummary, milestones
                     </div>
                 )}
 
-                <div className="p-8 flex flex-col md:flex-row items-center gap-8">
+                {/* Premium Badge */}
+                {!isSafe && redTeamLog && redTeamLog.length > 0 && (
+                    <div className="absolute top-0 right-0 p-4 z-20">
+                        <div className="flex items-center gap-2 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 px-3 py-1 rounded-full text-[10px] font-bold shadow-sm border border-amber-200 dark:border-amber-800 animate-pulse">
+                            <span>👑</span> PREMIUM SOVEREIGN AUDIT
+                        </div>
+                    </div>
+                )}
+
+                {/* [NEW] Logic DNA Visualizer - Only for Premium Audits */}
+                {redTeamLog && redTeamLog.length > 0 && (
+                    <div className="p-1">
+                        <LogicDNA score={score} isSafe={isSafe} complexity={vitals?.upgradeability || "Standard"} />
+                    </div>
+                )}
+
+                <div className="p-8 flex flex-col md:flex-row items-center gap-8 relative z-10 -mt-6">
                     {/* Heartbeat Monitor */}
                     <div className="relative">
                         <div className={`w-32 h-32 rounded-full flex items-center justify-center border-4 ${score >= 80 ? 'border-emerald-100 dark:border-emerald-900' : 'border-red-100 dark:border-red-900'} relative`}>
@@ -115,6 +140,15 @@ const AuditReport: React.FC<Props> = ({ score, warnings, riskSummary, milestones
                             <p className="text-sm font-medium leading-relaxed italic border-l-4 pl-3 py-1 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400">
                                 "{riskSummary}"
                             </p>
+                        )}
+
+                        {!riskSummary && score >= 95 && (
+                            <div className="mt-4 p-3 bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-900/30 rounded-lg">
+                                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase block mb-1">Diagnostic Reason</span>
+                                <p className="text-sm text-slate-600 dark:text-slate-300">
+                                    No malicious owner-logic found. Liquidity is locked and verified. Contract matches standard safe patterns.
+                                </p>
+                            </div>
                         )}
                     </div>
                 </div>
@@ -175,7 +209,57 @@ const AuditReport: React.FC<Props> = ({ score, warnings, riskSummary, milestones
                         </div>
                     </div>
                 )}
+
+                {/* [NEW] Red-Team Log (Terminal Style) */}
+                {redTeamLog && redTeamLog.length > 0 && (
+                    <div className="bg-slate-900 rounded-xl shadow-lg border border-slate-700 p-6 overflow-hidden relative font-mono text-xs">
+                        <div className="absolute top-0 left-0 w-full h-6 bg-slate-800 flex items-center px-4 gap-2">
+                            <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                            <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                            <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                            <div className="ml-2 text-slate-400 font-bold opacity-50">VERA_RED_TEAM_CLI</div>
+                        </div>
+                        <div className="mt-4 space-y-2 text-emerald-400">
+                            {redTeamLog.map((log, i) => (
+                                <div key={i} className="flex flex-col border-b border-slate-800 pb-2 last:border-0">
+                                    <div className="flex justify-between">
+                                        <span className="text-slate-300">{`> executing vector: ${log.vector}...`}</span>
+                                        <span className={log.verdict === 'VULNERABLE' ? 'text-red-500 font-bold' : 'text-emerald-500'}>
+                                            [{log.verdict}]
+                                        </span>
+                                    </div>
+                                    <div className="text-slate-500 pl-4">{log.details}</div>
+                                </div>
+                            ))}
+                            <div className="animate-pulse text-emerald-500 mt-2">{">_ session closed."}</div>
+                        </div>
+                    </div>
+                )}
+
+                {/* [NEW] Sovereign Proof Footer */}
+                {reportHash && (
+                    <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800 text-center">
+                        <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-2">Sovereign Proof of Audit</p>
+                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full font-mono text-[10px] text-slate-500 mb-4">
+                            <span>Merkle Hash:</span>
+                            <span className="text-emerald-600 dark:text-emerald-400 truncate max-w-[150px] md:max-w-xs">{reportHash}</span>
+                        </div>
+                        <button
+                            disabled={!reportHash}
+                            onClick={() => setShowLedger(true)}
+                            className="px-6 py-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-all text-sm flex items-center gap-2 mx-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <span>VERIFY ON LEDGER</span>
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        </button>
+                    </div>
+                )}
             </div>
+
+            {/* Protocol Ledger Modal */}
+            {showLedger && (
+                <ProtocolLedger onClose={() => setShowLedger(false)} highlightHash={reportHash} />
+            )}
         </div>
     );
 };

@@ -80,7 +80,7 @@ const LandingPage = ({ onConnect }: LandingPageProps) => {
                         onClick={onConnect}
                         className="group relative inline-flex items-center justify-center px-8 py-4 md:px-12 md:py-6 text-lg md:text-xl font-bold text-white transition-all duration-300 bg-emerald-600 font-mono rounded-xl hover:bg-emerald-500 hover:scale-105 hover:shadow-[0_0_30px_rgba(16,185,129,0.4)] active:scale-95 w-full md:w-auto"
                     >
-                        <span className="absolute inset-0 border border-white/20 rounded-xl group-hover:border-white/40 transition-colors"></span>
+                        <span className="absolute inset-0 border border-white/20 rounded-xl group-hover:border-white/40 transition-colors pointer-events-none"></span>
                         <span className="relative z-10 flex items-center gap-3">
                             INITIALIZE SECURITY
                             <svg className="w-6 h-6 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
