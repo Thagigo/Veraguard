@@ -61,3 +61,13 @@
     -   **Frontier Summary**: Integrated `/debrief` command in `core/vera_bot.py` for AI-generated daily audit summaries via Telegram.
     -   **UI Regression Fix**: Restored missing Tailwind v4 animations and reconstructed `AuditReport.tsx` to fix invisible audit results.
     -   **Verification**: Closed the CNS loop and verified end-to-end data flow via `tests/verify_neural_bridge.py`.
+
+- [2026-02-21] **Neural Bridge Re-established & Shared**:
+    -   **Root Anchor Logic**: Modified `synapse_worker.py` to move `NotebookLM/The_Vault` to the Drive root for maximum visibility.
+    -   **Permissions**: Automated sharing of the Vault folder with the founder's personal email (`baophamq@gmail.com`).
+    -   **Visibility Audit**: Implemented a standalone CLI utility `python -m core.synapse_worker --check-visibility` to verify bridge status.
+- [2026-02-21] **Visualizing Neural Evolution**:
+    -   **Exploit Reporting**: Updated Telegram `/debrief` command to list the "Top 3 New Neurons" added to the brain this week.
+    -   **Brain-Sync Monitor**: Created `core/check_sync.py` to identify "Brain Lag" and alert users to manually sync NotebookLM.
+    -   **IQ Counter**: Implemented a real-time "Neurons Active" counter on the Executive Dashboard to visualize system growth.
+    -   **Infrastructure**: Updated `database.py` with sync-tracking logic and fixed several latent bugs in the Telegram bot handlers.

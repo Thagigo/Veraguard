@@ -208,3 +208,9 @@ __marimo__/
 
 # VeraGuard Private Logic (Open Core Protection)
 core/private_logic/
+
+# Google API Credentials
+core/service_account.json
+core/token.json
+core/credentials.json
+*.db

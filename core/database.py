@@ -79,6 +79,36 @@ def init_db():
                 cursor.execute("INSERT INTO credit_ledger (user_id, amount_remaining, source_type, created_at) VALUES (?, ?, 'purchase', ?)", 
                                (uid, float(creds), time.time()))
 
+        # [NEW] Treasury & Evolution Stats
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS treasury_stats (
+                id INTEGER PRIMARY KEY,
+                total_volume_eth REAL DEFAULT 0,
+                chest_balance_eth REAL DEFAULT 0,
+                war_chest_eth REAL DEFAULT 0,
+                last_updated REAL
+            )
+        """)
+
+        # Migration: Add neurons_active
+        try:
+             cursor.execute("ALTER TABLE treasury_stats ADD COLUMN neurons_active INTEGER DEFAULT 0")
+        except:
+             pass 
+             
+        # Migration: Add last_notebooklm_sync
+        try:
+             cursor.execute("ALTER TABLE treasury_stats ADD COLUMN last_notebooklm_sync REAL DEFAULT 0")
+        except:
+             pass 
+
+        # Ensure row 1 exists (now that columns are definitely there or it fails gracefully)
+        try:
+            cursor.execute("INSERT OR IGNORE INTO treasury_stats (id, total_volume_eth, chest_balance_eth, war_chest_eth, neurons_active, last_notebooklm_sync) VALUES (1, 0, 0, 0, 0, 0)")
+        except:
+            # Fallback if some columns are still missing for some reason
+            cursor.execute("INSERT OR IGNORE INTO treasury_stats (id) VALUES (1)")
+
         conn.commit()
 
 # --- SETTLEMENT & REVENUE HELPERS ---
@@ -852,14 +882,16 @@ def get_executive_stats():
         active_vouchers = row[0] if row and row[0] else 0.0
         
         # 3. Vault Balance
-        c.execute("SELECT chest_balance_eth FROM treasury_stats WHERE id=1")
+        c.execute("SELECT chest_balance_eth, neurons_active FROM treasury_stats WHERE id=1")
         row = c.fetchone()
         vault_balance = row[0] if row and row[0] else 0.0
+        neurons_active = row[1] if row and row[1] else 0
         
         return {
             "total_carry_usd": total_carry,
             "active_vouchers_usd": active_vouchers,
-            "vault_balance_eth": vault_balance
+            "vault_balance_eth": vault_balance,
+            "neurons_active": neurons_active
         }
 
 # --- NEURAL BRIDGE (SYNAPSE) HELPER ---
@@ -872,8 +904,64 @@ def get_pending_synapse_syncs():
         return c.fetchall()
 
 def mark_synapse_synced(report_id: str):
+    # Logic: When a report is synced to Synapse, it's a new 'Neuron' in the brain.
     with get_db() as conn:
         c = conn.cursor()
         c.execute("UPDATE audit_reports SET synapse_synced=1 WHERE report_id=?", (report_id,))
+        conn.commit()
+
+def increment_neurons_active():
+    """Increments the global Neurons Active counter."""
+    with get_db() as conn:
+        c = conn.cursor()
+        c.execute("UPDATE treasury_stats SET neurons_active = neurons_active + 1, last_updated = ? WHERE id=1", (time.time(),))
+        conn.commit()
+
+def get_top_neurons_weekly(limit: int = 3):
+    """Returns the top 3 newest exploit patterns from the last 7 days."""
+    cutoff = time.time() - (7 * 86400)
+    with get_db() as conn:
+        c = conn.cursor()
+        c.execute("""
+            SELECT address, vera_score, data, timestamp 
+            FROM audit_reports 
+            WHERE vera_score < 50 AND timestamp > ? 
+            ORDER BY timestamp DESC LIMIT ?
+        """, (cutoff, limit))
+        rows = c.fetchall()
+        
+        results = []
+        import json
+        for r in rows:
+            try:
+                details = json.loads(r[2])
+                exploit = details.get("risk_summary", "Unknown Exploit")
+            except:
+                exploit = "Unknown Exploit"
+            
+            results.append({
+                "address": r[0],
+                "score": r[1],
+                "exploit": exploit,
+                "timestamp": r[3]
+            })
+        return results
+
+def get_brain_lag():
+    """Returns the count of neurons synced to Drive but not yet in NotebookLM."""
+    with get_db() as conn:
+        c = conn.cursor()
+        c.execute("SELECT last_notebooklm_sync FROM treasury_stats WHERE id=1")
+        row = c.fetchone()
+        last_sync = row[0] if row else 0
+        
+        c.execute("SELECT COUNT(*) FROM audit_reports WHERE synapse_synced=1 AND vera_score < 50 AND timestamp > ?", (last_sync,))
+        return c.fetchone()[0]
+
+def mark_brain_synced():
+    """Sets the last known NotebookLM sync time to now."""
+    with get_db() as conn:
+        c = conn.cursor()
+        c.execute("UPDATE treasury_stats SET last_notebooklm_sync = ?, last_updated = ? WHERE id=1", (time.time(), time.time()))
         conn.commit()
 

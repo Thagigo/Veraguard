@@ -7,3 +7,6 @@ requests
 web3
 eth-account
 python-telegram-bot
+google-api-python-client
+google-auth-oauthlib
+google-auth-httplib2

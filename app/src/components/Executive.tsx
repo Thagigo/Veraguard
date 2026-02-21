@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface ExecutiveStats {
-    total_carry: number;
-    workforce_reserves: number;
+    total_carry_usd: number;
+    active_vouchers_usd: number;
     vault_balance_eth: number;
+    neurons_active: number;
 }
 
 interface ExecutiveProps {
@@ -48,7 +49,7 @@ const Executive: React.FC<ExecutiveProps> = ({ isOpen, onClose, userId }) => {
                 <motion.div
                     initial={{ scale: 0.9, y: 20 }}
                     animate={{ scale: 1, y: 0 }}
-                    className="relative w-full max-w-4xl p-8 bg-zinc-900/50 border border-zinc-700/50 rounded-2xl shadow-2xl backdrop-blur-md overflow-hidden"
+                    className="relative w-full max-w-6xl p-8 bg-zinc-900/50 border border-zinc-700/50 rounded-2xl shadow-2xl backdrop-blur-md overflow-hidden"
                 >
                     {/* Header */}
                     <div className="flex justify-between items-center mb-8">
@@ -67,21 +68,21 @@ const Executive: React.FC<ExecutiveProps> = ({ isOpen, onClose, userId }) => {
                     </div>
 
                     {/* Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
                         {/* Metric 1: Founder Carry */}
                         <motion.div
-                            initial={{ x: -20, opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
+                            initial={{ y: 20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
                             transition={{ delay: 0.1 }}
                             className="p-6 rounded-xl bg-zinc-800/30 border border-zinc-700/50 hover:border-rose-500/50 transition-colors group"
                         >
                             <h3 className="text-zinc-500 text-xs font-bold uppercase tracking-widest mb-2">Total Carry</h3>
                             <div className="flex items-baseline gap-2">
                                 <span className="text-4xl font-light text-white font-mono">
-                                    {loading ? "..." : stats?.total_carry.toFixed(2)}
+                                    {loading ? "..." : stats?.total_carry_usd.toFixed(2)}
                                 </span>
-                                <span className="text-rose-500 text-sm">CRD</span>
+                                <span className="text-rose-500 text-sm">USD</span>
                             </div>
                             <div className="mt-4 h-1 w-full bg-zinc-800 rounded-full overflow-hidden">
                                 <motion.div
@@ -91,7 +92,7 @@ const Executive: React.FC<ExecutiveProps> = ({ isOpen, onClose, userId }) => {
                                 />
                             </div>
                             <p className="mt-2 text-[10px] text-zinc-500 group-hover:text-rose-400 transition-colors">
-                                10% Purchase Fees + 60% Settlement
+                                Fees + Settlements
                             </p>
                         </motion.div>
 
@@ -102,29 +103,29 @@ const Executive: React.FC<ExecutiveProps> = ({ isOpen, onClose, userId }) => {
                             transition={{ delay: 0.2 }}
                             className="p-6 rounded-xl bg-zinc-800/30 border border-zinc-700/50 hover:border-indigo-500/50 transition-colors group"
                         >
-                            <h3 className="text-zinc-500 text-xs font-bold uppercase tracking-widest mb-2">Workforce Reserves</h3>
+                            <h3 className="text-zinc-500 text-xs font-bold uppercase tracking-widest mb-2">Voucher Liability</h3>
                             <div className="flex items-baseline gap-2">
                                 <span className="text-4xl font-light text-white font-mono">
-                                    {loading ? "..." : stats?.workforce_reserves.toFixed(2)}
+                                    {loading ? "..." : stats?.active_vouchers_usd.toFixed(2)}
                                 </span>
-                                <span className="text-indigo-500 text-sm">CRD</span>
+                                <span className="text-indigo-500 text-sm">USD</span>
                             </div>
                             <div className="mt-4 h-1 w-full bg-zinc-800 rounded-full overflow-hidden">
                                 <motion.div
                                     initial={{ width: 0 }}
-                                    animate={{ width: "40%" }}
+                                    animate={{ width: "60%" }}
                                     className="h-full bg-indigo-500/80"
                                 />
                             </div>
                             <p className="mt-2 text-[10px] text-zinc-500 group-hover:text-indigo-400 transition-colors">
-                                40% of Active Voucher Liability
+                                Workforce Active Exposure
                             </p>
                         </motion.div>
 
                         {/* Metric 3: Insurance Depth */}
                         <motion.div
-                            initial={{ x: 20, opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
+                            initial={{ y: 20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
                             transition={{ delay: 0.3 }}
                             className="p-6 rounded-xl bg-zinc-800/30 border border-zinc-700/50 hover:border-emerald-500/50 transition-colors group"
                         >
@@ -144,6 +145,33 @@ const Executive: React.FC<ExecutiveProps> = ({ isOpen, onClose, userId }) => {
                             </div>
                             <p className="mt-2 text-[10px] text-zinc-500 group-hover:text-emerald-400 transition-colors">
                                 Emerald Vault Solvency
+                            </p>
+                        </motion.div>
+
+                        {/* Metric 4: Neural Evolution [NEW] */}
+                        <motion.div
+                            initial={{ y: 20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ delay: 0.4 }}
+                            className="p-6 rounded-xl bg-zinc-800/30 border border-zinc-700/50 hover:border-blue-500/50 transition-colors group shadow-[0_0_20px_rgba(59,130,246,0.1)]"
+                        >
+                            <h3 className="text-zinc-500 text-xs font-bold uppercase tracking-widest mb-2">Neurons Active</h3>
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-4xl font-light text-white font-mono">
+                                    {loading ? "..." : stats?.neurons_active}
+                                </span>
+                                <span className="text-blue-500 text-sm">IQ</span>
+                            </div>
+                            <div className="mt-4 h-1 w-full bg-zinc-800 rounded-full overflow-hidden">
+                                <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{ width: "100%" }}
+                                    transition={{ duration: 2, ease: "easeOut" }}
+                                    className="h-full bg-blue-500/80 shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+                                />
+                            </div>
+                            <p className="mt-2 text-[10px] text-zinc-500 group-hover:text-blue-400 transition-colors">
+                                Real-time Neural Bridge Evolution
                             </p>
                         </motion.div>
                     </div>
