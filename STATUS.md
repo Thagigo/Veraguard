@@ -79,3 +79,9 @@
     -   **RPC Resilience**: Fortified `core/chain_listener.py` against malformed WSS payloads (`KeyError` on generic messages).
     -   **Database**: Patched `core/database.py` to silently handle `sqlite3.IntegrityError` collisions without crashing on duplicate triage entries.
     -   **Scout Optimization**: Implemented Value Filter (Zero initial ETH check) in `core/scout.py` to conserve the daily 5.0 triage budget.
+
+- [2026-02-22] **Protocol Dashboard Restoration**:
+    -   **Backend Restoration**: Fixed 500 Internal Server Errors by resolving missing `itsdangerous` dependency and patching a `UnicodeEncodeError` (Windows terminal emoji incompatibility) in `auth.py`.
+    -   **CORS Hardening**: Hardened `CORSMiddleware` in `core/main.py` with explicit local origins to restore frontend connectivity.
+    -   **Verification**: Validated the `/api/brain/status` endpoint health via a dedicated debug suite (`debug_brain_status.py`).
+    -   **Diagnostic**: Logged persistent port 8000 conflicts and provided fallback port survival instructions.

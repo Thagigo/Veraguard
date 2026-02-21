@@ -90,5 +90,5 @@ def log_intrusion(user_data: dict):
     """
     user_name = user_data.get("first_name", "Unknown")
     user_id = user_data.get("id", "Unknown")
-    print(f"\n🚨 [INTRUSION ALERT] GOD MODE ACCESSED by {user_name} ({user_id})")
+    print(f"\n[ALERT] [INTRUSION] GOD MODE ACCESSED by {user_name} ({user_id})")
     print(f"   -> Sending Telegram Notification to Admin...\n")

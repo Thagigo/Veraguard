@@ -1,0 +1,30 @@
+{
+    "header": {
+        "title": "Sovereign Audit Certificate",
+        "issuer": "VeraGuard Protocol",
+        "timestamp": 1771713505.9881454,
+        "version": "1.0"
+    },
+    "target": {
+        "address": "0x...veryhuge",
+        "audit_type": "Deep Dive"
+    },
+    "vitals": {
+        "vera_score": 45,
+        "report_hash": "2ee09376f2c36cc99dd3097649db5527f34ddc7ecc2985aa51213d036b7321cd",
+        "signature_verified": true
+    },
+    "service_level_proof": {
+        "anchor_contract": "VeraAnchor.sol",
+        "anchor_tx": "0x194e39fb7f2d768b4c7195bae1f7585f4d83484cb582c4cb2dd0fe756729c2f5",
+        "sla_status": "FULFILLED (<24h)"
+    },
+    "treasury_split_verification": {
+        "credit_source": "voucher",
+        "vault": "60%",
+        "founder": "25% (Infrastructure)",
+        "war_chest": "15%",
+        "status": "Math Verified (VeraSplitter.sol)"
+    },
+    "forensic_notice": "This audit was performed using [Vera-Pass Voucher] credits. 40% of the value has been distributed to the protocol workforce."
+}

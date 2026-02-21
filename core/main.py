@@ -49,7 +49,14 @@ async def startup_event():
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"], 
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -380,7 +387,8 @@ def audit_contract(request: AuditRequest):
 # --- Admin / System ---
 
 @app.get("/api/brain/status")
-def get_brain_status(user_data: dict = Depends(auth.verify_telegram_auth)):
+def get_brain_status(request: Request, user_data: dict = Depends(auth.verify_telegram_auth)):
+    print(f"DEBUG: brain/status access from {request.client.host}")
     auth.log_intrusion(user_data)
     
     # Count staged signatures
