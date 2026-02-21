@@ -6,6 +6,7 @@ import os
 import json
 import time
 import datetime
+import requests
 from collections import Counter
 
 # Configuration
@@ -63,7 +64,11 @@ This exploit typically involves manipulating contract state to bypass validation
         f.write(f"[{timestamp}] HEURISTIC_ADD: {vector} | WEIGHT: 0.95 | SOURCE: CNS_AUTO_LEARN\n")
 
 def run_loop():
-    print("[BRAIN] Monitor Active. Analyzing Synaptic Patterns...")
+    print("[BRAIN] Monitor Active. Analyzing Synaptic Patterns every 4 hours...")
+    
+    # Import scout to inject Zero-Credit filters
+    from core.scout import scout
+    
     while True:
         try:
             patterns = analyze_patterns()
@@ -72,14 +77,27 @@ def run_loop():
             for vector, count in patterns.items():
                 if count >= 1: 
                     update_faq(vector, count)
+                    
+                    # Auto-inject into Scout's Zero-Credit Filter list
+                    zero_credit_filters = scout.heuristics.get("zero_credit_filters", [])
+                    if vector.lower() not in [f.lower() for f in zero_credit_filters]:
+                        zero_credit_filters.append(vector)
+                        scout.heuristics["zero_credit_filters"] = zero_credit_filters
+                        print(f"[BRAIN] Injected '{vector}' into Scout Zero-Credit Filters.")
+                        
+                        try:
+                            requests.post("http://127.0.0.1:8000/api/internal/live_event", json={"event_type": "intelligence_update", "data": {"heuristic": vector}})
+                        except Exception as e:
+                            print(f"[BRAIN] Failed to broadcast intelligence update: {e}")
             
-            time.sleep(10) # Review every 10s
+            # Sleep for 4 hours (14400 seconds)
+            time.sleep(14400) 
             
         except KeyboardInterrupt:
             break
         except Exception as e:
             print(f"[BRAIN] Error: {e}")
-            time.sleep(10)
+            time.sleep(60)
 
 if __name__ == "__main__":
     run_loop()

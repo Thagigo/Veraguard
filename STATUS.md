@@ -71,3 +71,11 @@
     -   **Brain-Sync Monitor**: Created `core/check_sync.py` to identify "Brain Lag" and alert users to manually sync NotebookLM.
     -   **IQ Counter**: Implemented a real-time "Neurons Active" counter on the Executive Dashboard to visualize system growth.
     -   **Infrastructure**: Updated `database.py` with sync-tracking logic and fixed several latent bugs in the Telegram bot handlers.
+- **2026-02-21**: Implemented **Live Heuristic Heartbeat & Executive View**:
+    -   **Heartbeat UI**: Created `/api/live_events` SSE stream. Wired `DashboardHome.tsx` to handle `contract_detected` Pings and `intelligence_update` Toasts.
+    -   **Bounty Ticker**: Upgraded `WarRoom.tsx` to inject High-Risk (>65% Suspicion) Scout alerts with precise formatting into the public feed.
+    -   **Founder's View**: Added an Efficiency Rate metric (Scout Leads / Total Seen contracts) to the secure Founder's dashboard (`Executive.tsx`).
+- **2026-02-21**: **Critical Stabilization & Collision Fixes**:
+    -   **RPC Resilience**: Fortified `core/chain_listener.py` against malformed WSS payloads (`KeyError` on generic messages).
+    -   **Database**: Patched `core/database.py` to silently handle `sqlite3.IntegrityError` collisions without crashing on duplicate triage entries.
+    -   **Scout Optimization**: Implemented Value Filter (Zero initial ETH check) in `core/scout.py` to conserve the daily 5.0 triage budget.

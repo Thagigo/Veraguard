@@ -125,13 +125,15 @@ def get_recent_bounties(limit: int = 10):
             # e.g. Score 40 -> 0.5 ETH, Score 10 -> 5 ETH
             payout = (50 - score) * 0.1 
             
+            is_triage = (uid == "Scout_Auto")
+            
             bounties.append({
-                "scout_alias": uid[:6] + "..." if uid else "Unknown",
+                "scout_alias": uid[:6] + "..." if uid and not is_triage else uid,
                 "target": addr,
                 "score": score,
                 "payout_eth": round(payout, 3),
                 "timestamp": ts,
-                "type": "BOUNTY_CLAIM"
+                "type": "TRIAGE_ALERT" if is_triage else "BOUNTY_CLAIM"
             })
             
         return bounties

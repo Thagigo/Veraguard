@@ -162,7 +162,7 @@ def check_visibility():
             
         success_msg = f"✅ *Neural Bridge Re-established*\nFolder ID: `{folder_id}`\n[Open in Drive]({web_link})"
         send_telegram_alert(success_msg)
-        print("\n✅ NEURAL BRIDGE VISIBLE AT ROOT.")
+        print("\n[SUCCESS] NEURAL BRIDGE VISIBLE AT ROOT.")
     except Exception as e:
         fail_msg = f"❌ *Neural Bridge Visibility Failed*\nError: {str(e)}"
         send_telegram_alert(fail_msg)

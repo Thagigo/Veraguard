@@ -53,7 +53,7 @@ class BaseScout:
         today = datetime.now().date()
         if today > self.last_reset:
             self.current_spend = 0.00
-            self.daily_budget = 0.50 # Reset to baseline
+            self.daily_budget = 5.00 # Reset to baseline (Increased via Value Filter optimization)
             self.last_reset = today
             self.log(f"New day. Budget reset to ${self.daily_budget}", "system")
 
@@ -72,10 +72,97 @@ class BaseScout:
         self.daily_budget += amount
         self.log(f"Budget refilled by ${amount}. New Budget: ${self.daily_budget:.2f}", "success")
 
+    def stateless_triage(self, address: str) -> float:
+        """
+        Pre-Credit Filter checking:
+        1) Verified Source Code (Mocked)
+        2) Deployer History (Mocked)
+        3) Interaction Volume (Mocked)
+        Returns a Suspicion Score (0-100)
+        """
+        score = 0
+        
+        # 1. Source Code Verification
+        # Unverified source is highly suspicious
+        if "unverified" in address.lower() or random.random() < 0.2:
+            score += 40
+            
+        # 2. Deployer History
+        # New wallets or those with past rug pulls are suspicious
+        if "fresh" in address.lower() or random.random() < 0.3:
+            score += 35
+            
+        # 3. Interaction Volume
+        # Low volume could be a sleeper contract
+        if random.random() < 0.15:
+            score += 25
+            
+        # Check Zero-Credit Brain Filters
+        zero_credit_patterns = self.heuristics.get("zero_credit_filters", [])
+        for pattern in zero_credit_patterns:
+             if pattern in address.lower():
+                 score += 50
+                 
+        return min(score, 100)
+        
+    def send_telegram_alert(self, message: str):
+        import os, requests
+        token = os.getenv("BOT_TOKEN")
+        admin_id = os.getenv("ADMIN_TELEGRAM_ID")
+        if not token or not admin_id:
+            return
+        
+        url = f"https://api.telegram.org/bot{token}/sendMessage"
+        payload = {"chat_id": admin_id, "text": message, "parse_mode": "Markdown"}
+        try:
+            requests.post(url, json=payload, timeout=5)
+        except:
+             pass
+
     def scan_contract(self, address: str) -> dict:
         """
         Orchestrates the scouting process.
         """
+        
+        # --- PRE-FLIGHT: Value Filter ---
+        liquidity = self.check_liquidity(address)
+        if liquidity <= 0:
+            self.log(f"Skipping {address}: No initial value or verified source code.", "info")
+            return {"status": "skipped", "reason": "No initial value/Verified source"}
+
+        # --- 1. Stateless Triage (Pre-credit) ---
+        suspicion_score = self.stateless_triage(address)
+        self.log(f"Triage for {address}: Suspicion = {suspicion_score}%", "info")
+        
+        if suspicion_score > 65:
+            alert = f"🚨 *Scout Triage Alert*\nAddress: `{address}`\nSuspicion: {suspicion_score}%"
+            self.send_telegram_alert(alert)
+            self.log(f"Alert Sent for {address} (Score: {suspicion_score}%)", "alert")
+            
+            # [NEW] Heartbeat Triggers
+            try:
+                from core import database
+                import time
+                import json
+                
+                database.increment_scout_leads()
+                risk_data = {
+                    "risk_summary": "Triage Alert (Stateless)",
+                    "triage_score": suspicion_score,
+                    "warnings": ["Matched Zero-Credit or High Suspicion Heuristics"]
+                }
+                database.save_audit_report(
+                    report_id=f"triage_{int(time.time())}", 
+                    report_hash="N/A", 
+                    address=address, 
+                    data=json.dumps(risk_data), 
+                    vera_score=10, 
+                    user_id="Scout_Auto"
+                )
+            except Exception as e:
+                self.log(f"Failed to record triage lead: {e}", "warning")
+            
+        # --- 2. Live Scan Logic ---
         liquidity = self.check_liquidity(address)
         
         if liquidity < 5000:

@@ -1,17 +1,43 @@
 from fastapi import FastAPI, HTTPException, Request, Depends, Header
+from starlette.middleware.sessions import SessionMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, AsyncGenerator
 import time
 import hashlib
 import json
 import asyncio
+import logging
+from sse_starlette.sse import EventSourceResponse
 
 # Core Modules
 from core import database, payment_handler, payment_gate, auth, scout, brain_sync, red_team
 # from .audit_logic import check_contract # Local import in endpoint to avoid circular issues if any
 
 app = FastAPI(title="VeraGuard Audit Engine")
+
+# --- SSE Broadcaster ---
+class SSEManager:
+    def __init__(self):
+        self.listeners = []
+        self._lock = asyncio.Lock()
+
+    async def add_listener(self, queue):
+        async with self._lock:
+            self.listeners.append(queue)
+
+    async def remove_listener(self, queue):
+        async with self._lock:
+            if queue in self.listeners:
+                self.listeners.remove(queue)
+
+    async def broadcast(self, event_type: str, data: dict):
+        async with self._lock:
+            for queue in self.listeners:
+                await queue.put({"event": event_type, "data": json.dumps(data)})
+
+sse_manager = SSEManager()
 
 # --- Startup & Config ---
 
@@ -480,3 +506,33 @@ def get_bounty_feed():
 @app.get("/api/history/{user_id}")
 def get_user_history_endpoint(user_id: str):
     return database.get_user_audit_history(user_id)
+
+@app.get("/api/live_events")
+async def sse_endpoint(request: Request):
+    """Event stream for the 'Live Heuristic Heartbeat'."""
+    queue = asyncio.Queue()
+    await sse_manager.add_listener(queue)
+
+    async def event_generator() -> AsyncGenerator[dict, None]:
+        try:
+            while True:
+                if await request.is_disconnected():
+                    break
+                event = await queue.get()
+                yield event
+        except asyncio.CancelledError:
+            pass
+        finally:
+            await sse_manager.remove_listener(queue)
+
+    return EventSourceResponse(event_generator())
+
+class LiveEventRequest(BaseModel):
+    event_type: str
+    data: dict
+
+@app.post("/api/internal/live_event")
+async def trigger_live_event(req: LiveEventRequest):
+    """Internal endpoint for background processes to trigger SSE events."""
+    await sse_manager.broadcast(req.event_type, req.data)
+    return {"status": "broadcasted"}

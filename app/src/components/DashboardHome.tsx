@@ -139,6 +139,10 @@ export default function DashboardHome({ userId, onLogout }: DashboardHomeProps) 
 
     const [paymentSuccessCost, setPaymentSuccessCost] = useState(0);
 
+    // [NEW] Live Heuristic Heartbeat State
+    const [livePing, setLivePing] = useState<string | null>(null);
+    const [liveIntelligence, setLiveIntelligence] = useState<string | null>(null);
+
 
 
     // Initialize Telegram & Fee (User ID handled by parent)
@@ -166,9 +170,36 @@ export default function DashboardHome({ userId, onLogout }: DashboardHomeProps) 
         const handleOpenDash = () => setShowDashboard(true);
         window.addEventListener('open-protocol-dashboard', handleOpenDash);
 
+        // [NEW] Live Events SSE Connection
+        const source = new EventSource('http://localhost:8000/api/live_events');
+        source.onmessage = function (event) {
+            try {
+                const data = JSON.parse(event.data);
+                const eventType = data.event;
+                const payload = typeof data.data === 'string' ? JSON.parse(data.data) : data.data;
+
+                if (eventType === 'contract_detected') {
+                    if (window.Telegram?.WebApp?.HapticFeedback) {
+                        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+                    }
+                    setLivePing(payload.address);
+                    setTimeout(() => setLivePing(null), 2500);
+                } else if (eventType === 'intelligence_update') {
+                    if (window.Telegram?.WebApp?.HapticFeedback) {
+                        window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+                    }
+                    setLiveIntelligence(payload.heuristic);
+                    setTimeout(() => setLiveIntelligence(null), 6000);
+                }
+            } catch (e) {
+                console.error("SSE parse error", e);
+            }
+        };
+
         return () => {
             clearInterval(timer);
             window.removeEventListener('open-protocol-dashboard', handleOpenDash);
+            source.close();
         };
 
     }, [userId])
@@ -639,6 +670,16 @@ export default function DashboardHome({ userId, onLogout }: DashboardHomeProps) 
                 </div>
             )}
 
+            {/* [NEW] Intelligence Update Toast */}
+            {liveIntelligence && (
+                <div className="fixed bottom-4 left-4 z-50 bg-emerald-600 text-white px-4 py-3 text-sm font-bold rounded-lg shadow-xl animate-slide-up border border-emerald-400">
+                    <div className="flex items-center gap-2">
+                        <span className="text-xl">🧠</span>
+                        <span>Intelligence Update: New heuristic '{liveIntelligence}' active.</span>
+                    </div>
+                </div>
+            )}
+
             {!walletAddress ? (
                 <LandingPage onConnect={connectWallet} />
             ) : (
@@ -656,6 +697,12 @@ export default function DashboardHome({ userId, onLogout }: DashboardHomeProps) 
                                 {isLiveView && (
                                     <div className="bg-red-500/90 text-white text-[10px] font-bold px-2 py-1 rounded-full animate-pulse border border-red-400/50">
                                         LIVE VIEW
+                                    </div>
+                                )}
+
+                                {livePing && (
+                                    <div className="bg-blue-500/90 text-white text-[10px] font-bold px-2 py-1 rounded-full animate-pulse border border-blue-400/50" title={livePing}>
+                                        ⚡ SCOUT PING
                                     </div>
                                 )}
 

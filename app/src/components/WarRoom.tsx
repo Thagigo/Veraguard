@@ -45,14 +45,22 @@ const WarRoom: React.FC = () => {
                 {bounties.map((b, i) => (
                     <div key={i} className="flex items-center gap-2 text-[10px] md:text-xs font-mono">
                         <span className="text-slate-500 hidden sm:inline">[{new Date(b.timestamp * 1000).toLocaleTimeString()}]</span>
-                        <span className="text-rose-400 font-bold">BUST CONFIRMED</span>
-                        <span className="text-slate-600">::</span>
-                        <span className="text-white max-w-[100px] sm:max-w-none truncate">{b.target}</span>
-                        <span className="text-slate-600">::</span>
-                        <span className="text-indigo-400">@{b.scout_alias}</span>
-                        <span className="bg-emerald-900/50 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-700/50 text-[9px] md:text-[10px] font-bold">
-                            +{b.payout_eth.toFixed(3)} ETH
-                        </span>
+                        {b.type === 'TRIAGE_ALERT' ? (
+                            <span className="text-amber-400 font-bold">
+                                ⚠️ HIGH RISK DETECTED: {b.target} - Heuristic: 'High Suspicion / Zero-Credit'. BOUNTY OPEN FOR SHERIFFS.
+                            </span>
+                        ) : (
+                            <>
+                                <span className="text-rose-400 font-bold">BUST CONFIRMED</span>
+                                <span className="text-slate-600">::</span>
+                                <span className="text-white max-w-[100px] sm:max-w-none truncate">{b.target}</span>
+                                <span className="text-slate-600">::</span>
+                                <span className="text-indigo-400">@{b.scout_alias}</span>
+                                <span className="bg-emerald-900/50 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-700/50 text-[9px] md:text-[10px] font-bold">
+                                    +{b.payout_eth.toFixed(3)} ETH
+                                </span>
+                            </>
+                        )}
                     </div>
                 ))}
             </div>

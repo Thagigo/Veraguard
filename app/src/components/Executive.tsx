@@ -6,6 +6,7 @@ interface ExecutiveStats {
     active_vouchers_usd: number;
     vault_balance_eth: number;
     neurons_active: number;
+    efficiency_rate?: number;
 }
 
 interface ExecutiveProps {
@@ -68,7 +69,7 @@ const Executive: React.FC<ExecutiveProps> = ({ isOpen, onClose, userId }) => {
                     </div>
 
                     {/* Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
 
                         {/* Metric 1: Founder Carry */}
                         <motion.div
@@ -172,6 +173,33 @@ const Executive: React.FC<ExecutiveProps> = ({ isOpen, onClose, userId }) => {
                             </div>
                             <p className="mt-2 text-[10px] text-zinc-500 group-hover:text-blue-400 transition-colors">
                                 Real-time Neural Bridge Evolution
+                            </p>
+                        </motion.div>
+
+                        {/* Metric 5: Scout Efficiency Rate [NEW] */}
+                        <motion.div
+                            initial={{ y: 20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ delay: 0.5 }}
+                            className="p-6 rounded-xl bg-zinc-800/30 border border-zinc-700/50 hover:border-amber-500/50 transition-colors group shadow-[0_0_20px_rgba(245,158,11,0.1)]"
+                        >
+                            <h3 className="text-zinc-500 text-xs font-bold uppercase tracking-widest mb-2">Efficiency Rate</h3>
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-4xl font-light text-white font-mono">
+                                    {loading ? "..." : (stats?.efficiency_rate || 0).toFixed(2)}
+                                </span>
+                                <span className="text-amber-500 text-sm">%</span>
+                            </div>
+                            <div className="mt-4 h-1 w-full bg-zinc-800 rounded-full overflow-hidden relative">
+                                <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${Math.min((stats?.efficiency_rate || 0), 100)}%` }}
+                                    transition={{ duration: 1.5, ease: "easeOut" }}
+                                    className="h-full bg-amber-500/80 shadow-[0_0_10px_rgba(245,158,11,0.5)]"
+                                />
+                            </div>
+                            <p className="mt-2 text-[10px] text-zinc-500 group-hover:text-amber-400 transition-colors">
+                                Scout Leads / Total Seen
                             </p>
                         </motion.div>
                     </div>

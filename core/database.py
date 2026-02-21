@@ -102,6 +102,16 @@ def init_db():
         except:
              pass 
 
+        # Migration: Add contracts seen and scout leads
+        try:
+             cursor.execute("ALTER TABLE treasury_stats ADD COLUMN total_contracts_seen INTEGER DEFAULT 0")
+        except:
+             pass
+        try:
+             cursor.execute("ALTER TABLE treasury_stats ADD COLUMN scout_leads_generated INTEGER DEFAULT 0")
+        except:
+             pass
+
         # Ensure row 1 exists (now that columns are definitely there or it fails gracefully)
         try:
             cursor.execute("INSERT OR IGNORE INTO treasury_stats (id, total_volume_eth, chest_balance_eth, war_chest_eth, neurons_active, last_notebooklm_sync) VALUES (1, 0, 0, 0, 0, 0)")
@@ -435,9 +445,12 @@ def save_audit_report(report_id: str, report_hash: str, address: str, data: str,
 
     with get_db() as conn:
         c = conn.cursor()
-        c.execute("INSERT INTO audit_reports (report_id, report_hash, address, data, timestamp, vera_score, finder_id, is_first_finder) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                  (report_id, report_hash, address, data, time.time(), vera_score, user_id, is_first))
-        conn.commit()
+        try:
+            c.execute("INSERT INTO audit_reports (report_id, report_hash, address, data, timestamp, vera_score, finder_id, is_first_finder) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                      (report_id, report_hash, address, data, time.time(), vera_score, user_id, is_first))
+            conn.commit()
+        except sqlite3.IntegrityError:
+            pass # Silently skip duplicates
 
 def get_audit_report(report_id: str):
     with get_db() as conn:
@@ -881,18 +894,50 @@ def get_executive_stats():
         row = c.fetchone()
         active_vouchers = row[0] if row and row[0] else 0.0
         
-        # 3. Vault Balance
-        c.execute("SELECT chest_balance_eth, neurons_active FROM treasury_stats WHERE id=1")
+        # 3. Vault Balance, Neurons, and Efficiency
+        try:
+            c.execute("SELECT chest_balance_eth, neurons_active, total_contracts_seen, scout_leads_generated FROM treasury_stats WHERE id=1")
+        except sqlite3.OperationalError:
+            # Fallback if migration hasn't run yet in a concurrent scenario
+            return {
+                "total_carry_usd": total_carry,
+                "active_vouchers_usd": active_vouchers,
+                "vault_balance_eth": 0.0,
+                "neurons_active": 0,
+                "efficiency_rate": 0.0
+            }
+
         row = c.fetchone()
         vault_balance = row[0] if row and row[0] else 0.0
         neurons_active = row[1] if row and row[1] else 0
+        seen = len(row) > 2 and row[2] and row[2] or 0
+        leads = len(row) > 3 and row[3] and row[3] or 0
         
         return {
             "total_carry_usd": total_carry,
             "active_vouchers_usd": active_vouchers,
             "vault_balance_eth": vault_balance,
-            "neurons_active": neurons_active
+            "neurons_active": neurons_active,
+            "efficiency_rate": (leads / seen * 100) if seen > 0 else 0.0
         }
+
+def increment_contracts_seen():
+    with get_db() as conn:
+        c = conn.cursor()
+        try:
+            c.execute("UPDATE treasury_stats SET total_contracts_seen = total_contracts_seen + 1 WHERE id=1")
+            conn.commit()
+        except sqlite3.OperationalError:
+            pass
+
+def increment_scout_leads():
+    with get_db() as conn:
+        c = conn.cursor()
+        try:
+            c.execute("UPDATE treasury_stats SET scout_leads_generated = scout_leads_generated + 1 WHERE id=1")
+            conn.commit()
+        except sqlite3.OperationalError:
+            pass
 
 # --- NEURAL BRIDGE (SYNAPSE) HELPER ---
 def get_pending_synapse_syncs():
