@@ -3,7 +3,7 @@ import os
 
 # Mock the environment
 os.environ["BOT_TOKEN"] = "123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"
-os.environ["ADMIN_TELEGRAM_ID"] = "123456789"
+os.environ["ADMIN_TELEGRAM_ID"] = "7695994098"
 
 # Add project root to sys.path
 sys.path.append(os.getcwd())

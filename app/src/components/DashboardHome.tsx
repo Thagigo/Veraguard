@@ -142,6 +142,8 @@ export default function DashboardHome({ userId, onLogout }: DashboardHomeProps) 
     // [NEW] Live Heuristic Heartbeat State
     const [livePing, setLivePing] = useState<string | null>(null);
     const [liveIntelligence, setLiveIntelligence] = useState<string | null>(null);
+    // [NEW] Spoof Alert State
+    const [spoofAlert, setSpoofAlert] = useState<string | null>(null);
     // [NEW] History of Suspicion
     const [initialDetection, setInitialDetection] = useState<{ score: number; source: string; detected_at: number } | null>(null);
 
@@ -192,6 +194,18 @@ export default function DashboardHome({ userId, onLogout }: DashboardHomeProps) 
                     }
                     setLiveIntelligence(payload.heuristic);
                     setTimeout(() => setLiveIntelligence(null), 6000);
+                } else if (eventType === 'brain_discovery') {
+                    if (window.Telegram?.WebApp?.HapticFeedback) {
+                        window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+                    }
+                    setLiveIntelligence("🧠 BRAIN DISCOVERY: New detection rule staged.");
+                    setTimeout(() => setLiveIntelligence(null), 8000);
+                } else if (eventType === 'spoof_alert') {
+                    if (window.Telegram?.WebApp?.HapticFeedback) {
+                        window.Telegram.WebApp.HapticFeedback.notificationOccurred('warning');
+                    }
+                    setSpoofAlert(payload.message);
+                    setTimeout(() => setSpoofAlert(null), 6000);
                 }
             } catch (e) {
                 console.error("SSE parse error", e);
@@ -689,6 +703,27 @@ export default function DashboardHome({ userId, onLogout }: DashboardHomeProps) 
                                 </div>
                                 <p className="text-sm text-white font-mono leading-snug break-words">
                                     {liveIntelligence}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* [NEW] Spoof Alert Toast — Blue False-Positive Block */}
+            {spoofAlert && (
+                <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:w-[420px] z-50 animate-slide-up" style={{ bottom: liveIntelligence ? '9rem' : '1rem' }}>
+                    <div className="bg-slate-900 border border-blue-500/60 rounded-xl shadow-2xl shadow-blue-500/20 overflow-hidden">
+                        <div className="h-0.5 bg-blue-400 animate-pulse" />
+                        <div className="px-4 py-3 flex items-start gap-3">
+                            <span className="text-2xl mt-0.5">🔵</span>
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                    <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Spoof Alert</span>
+                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-ping inline-block" />
+                                </div>
+                                <p className="text-sm text-blue-100 font-mono leading-snug break-words">
+                                    {spoofAlert}
                                 </p>
                             </div>
                         </div>

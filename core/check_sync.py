@@ -20,7 +20,7 @@ def check_sync_lag():
         admin_id = os.getenv("ADMIN_TELEGRAM_ID")
         
         if token and admin_id:
-            msg = f"⚠️ *BRAIN LAG*: `{lag_count}` new patterns detected.\nPlease manually sync NotebookLM to update your AI partner."
+            msg = f"⚠️ *BRAIN LAG*: `{lag_count}` new patterns detected.\nPlease re-upload `Brain_Digest.md` from Drive into NotebookLM to update your AI partner."
             url = f"https://api.telegram.org/bot{token}/sendMessage"
             payload = {
                 "chat_id": admin_id,

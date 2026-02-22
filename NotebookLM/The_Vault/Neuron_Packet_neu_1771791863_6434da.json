@@ -1,0 +1,14 @@
+{
+  "synapse_id": "neu_1771791863_6434da",
+  "timestamp": "2026-02-22T21:24:23.465861",
+  "verdict": "BUST_CONFIRMED",
+  "vera_score": 0,
+  "target_contract": "0x...safe",
+  "sheriff_notes": "Automated flagging of SIMULATION: Safe Contract Demo.",
+  "exploit_vector": "SIMULATION: Safe Contract Demo",
+  "technical_context": {
+    "report_hash": "020a060ca1c2c852c81eecb360c414b01ea6187c85b73124885e537520ce11ab",
+    "raw_data_snippet": "{'vera_score': 100, 'warnings': [], 'note': 'SIMULATION: Safe Contract Demo', 'report_id': '09eacf16-1250-4245-981b-ce12de6434da', 'report_hash': '020a060ca1c2c852c81eecb360c414b01ea6187c85b73124885e537520ce11ab', 'timestamp': '1771414299.6776311', 'risk_summary': 'SIMULATION: Safe Contract Demo', 'milestones': [], 'vitals': {'liquidity': 'SIMULATED', 'owner_risk': 'UNKNOWN'}}"
+  },
+  "instruction_to_brain": "Analyze this exploit pattern. Update Heuristics/FAQ if novel."
+}

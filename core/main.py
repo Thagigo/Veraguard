@@ -35,7 +35,11 @@ class SSEManager:
     async def broadcast(self, event_type: str, data: dict):
         async with self._lock:
             for queue in self.listeners:
-                await queue.put({"event": event_type, "data": json.dumps(data)})
+                # Embed event_type inside the data JSON so the frontend's
+                # source.onmessage (which only fires for the default SSE
+                # "message" type) can parse it via data.event.
+                payload = json.dumps({"event": event_type, "data": json.dumps(data)})
+                await queue.put({"data": payload})
 
 sse_manager = SSEManager()
 

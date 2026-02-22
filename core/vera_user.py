@@ -28,6 +28,7 @@ from telethon.tl.types import PeerChat, PeerChannel
 # Unified triage engine & scout
 from core.audit_engine import triage_address, extract_addresses
 from core.scout import scout
+from core import database as db
 
 # ── Config ───────────────────────────────────────────────────────────────────
 load_dotenv()
@@ -145,9 +146,25 @@ async def main():
     async def handler(event):
         text = event.raw_text or ""
 
-        # Skip DMs — only group/channel messages
-        peer = event.message.peer_id
-        if not isinstance(peer, (PeerChat, PeerChannel)):
+        # ── Admin Commands (Private DM only) ──────────────────────────────────
+        is_private = not isinstance(event.message.peer_id, (PeerChat, PeerChannel))
+        admin_id = int(os.getenv("ADMIN_TELEGRAM_ID", "0"))
+        sender_id = event.sender_id
+
+        if is_private and sender_id == admin_id:
+            cmd = text.strip().lower()
+            if cmd == "/synced":
+                db.mark_brain_synced()
+                await event.reply("✅ *Brain synced.* Lag counter reset to zero.")
+                log.info("Admin reset brain lag counter via /synced")
+                return
+            elif cmd == "/status":
+                lag = db.get_brain_lag()
+                await event.reply(f"📊 *VeraGuard Status*\nBrain Lag: `{lag}` new patterns.")
+                return
+
+        # Regular Message Monitoring (Group/Channel only)
+        if is_private:
             return
 
         log.info(f"[MSG] chat={event.chat_id} | {text[:80]!r}")
@@ -181,14 +198,24 @@ async def main():
                 "source":  "userbot",
             })
 
-            # ── Pattern match → fire intelligence_update SSE ─────────────────
+            # ── Spoof detected → blue alert SSE, stay silent in Telegram ─────
+            if result.get("spoof_detected"):
+                spoof_msg = f"False Positive Blocked: Bytecode mismatch for {address[:10]}…"
+                log.warning(f"[SPOOF] {spoof_msg}")
+                fire_sse_event("spoof_alert", {
+                    "message": spoof_msg,
+                    "address": address,
+                })
+                continue  # Silent — do not reply in Telegram
+
+            # ── Bytecode-confirmed pattern match → intelligence_update SSE ────
             if result.get("pattern_match"):
                 pattern_name = result["pattern_match"]
-                log.info(f"🧠 Pattern matched: {pattern_name}")
+                log.info(f"🧠 Pattern confirmed (bytecode): {pattern_name}")
                 fire_sse_event("intelligence_update", {
                     "heuristic": (
                         f"Analyzing {address[:8]}… "
-                        f"Matched NEW Pattern: {pattern_name}"
+                        f"Bytecode-confirmed: {pattern_name}"
                     )
                 })
 

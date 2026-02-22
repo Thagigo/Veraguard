@@ -1,0 +1,14 @@
+{
+  "synapse_id": "neu_1771791899_fdf99a",
+  "timestamp": "2026-02-22T21:24:59.937731",
+  "verdict": "BUST_CONFIRMED",
+  "vera_score": 45,
+  "target_contract": "0x...veryhuge",
+  "sheriff_notes": "Automated flagging of SIMULATION: Multi-Layer Deep Dive Analysis.",
+  "exploit_vector": "SIMULATION: Multi-Layer Deep Dive Analysis",
+  "technical_context": {
+    "report_hash": "7408d1794d47655ef9f57a8a8f61906a1882639600f2a17fb178b2f5bb196fd9",
+    "raw_data_snippet": "{'vera_score': 45, 'warnings': ['CRITICAL: Hidden Proxy Logic', 'HIGH: Unverified External Call'], 'note': 'SIMULATION: Multi-Layer Deep Dive Analysis', 'report_id': 'd3e47049-427d-40cc-8bfb-dec1e7fdf99a', 'report_hash': '7408d1794d47655ef9f57a8a8f61906a1882639600f2a17fb178b2f5bb196fd9', 'timestamp': '1771416310.9322464', 'risk_summary': 'SIMULATION: Multi-Layer Deep Dive Analysis', 'milestones': [], 'vitals': {'liquidity': 'SIMULATED', 'owner_risk': 'UNKNOWN'}}"
+  },
+  "instruction_to_brain": "Analyze this exploit pattern. Update Heuristics/FAQ if novel."
+}

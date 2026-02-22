@@ -7,6 +7,7 @@ interface ExecutiveStats {
     vault_balance_eth: number;
     neurons_active: number;
     efficiency_rate?: number;
+    staged_signatures?: number;
 }
 
 interface ExecutiveProps {
@@ -200,6 +201,33 @@ const Executive: React.FC<ExecutiveProps> = ({ isOpen, onClose, userId }) => {
                             </div>
                             <p className="mt-2 text-[10px] text-zinc-500 group-hover:text-amber-400 transition-colors">
                                 Scout Leads / Total Seen
+                            </p>
+                        </motion.div>
+
+                        {/* Metric 6: Staged Signatures [NEW] */}
+                        <motion.div
+                            initial={{ y: 20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ delay: 0.6 }}
+                            className="p-6 rounded-xl bg-zinc-800/30 border border-zinc-700/50 hover:border-violet-500/50 transition-colors group shadow-[0_0_20px_rgba(139,92,246,0.1)]"
+                        >
+                            <h3 className="text-zinc-500 text-xs font-bold uppercase tracking-widest mb-2">Staged Signatures</h3>
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-4xl font-light text-white font-mono">
+                                    {loading ? "..." : (stats?.staged_signatures || 0)}
+                                </span>
+                                <span className="text-violet-500 text-sm">HEX</span>
+                            </div>
+                            <div className="mt-4 h-1 w-full bg-zinc-800 rounded-full overflow-hidden relative">
+                                <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{ width: stats?.staged_signatures ? "100%" : "0%" }}
+                                    transition={{ duration: 1.5, ease: "easeOut" }}
+                                    className="h-full bg-violet-500/80 shadow-[0_0_10px_rgba(139,92,246,0.5)]"
+                                />
+                            </div>
+                            <p className="mt-2 text-[10px] text-zinc-500 group-hover:text-violet-400 transition-colors">
+                                Intelligence Bridge Staging Area
                             </p>
                         </motion.div>
                     </div>

@@ -1,0 +1,14 @@
+{
+  "synapse_id": "neu_1771791958_5e3329",
+  "timestamp": "2026-02-22T21:25:58.337542",
+  "verdict": "BUST_CONFIRMED",
+  "vera_score": 45,
+  "target_contract": "0xDeepDiveTest",
+  "sheriff_notes": "Automated flagging of SIMULATION: Multi-Layer Deep Dive Analysis.",
+  "exploit_vector": "SIMULATION: Multi-Layer Deep Dive Analysis",
+  "technical_context": {
+    "report_hash": "6ab92580cd4a8ce7319d4e6ea21f55af11e29a2359108b9db775a2ee0145bf05",
+    "raw_data_snippet": "{'vera_score': 45, 'warnings': ['CRITICAL: Hidden Proxy Logic', 'HIGH: Unverified External Call'], 'note': 'SIMULATION: Multi-Layer Deep Dive Analysis', 'red_team_log': [{'vector': 'Flash Loan Attack', 'status': 'Attempted', 'verdict': 'VULNERABLE', 'details': 'Simulating Liquidity Drain... [VULNERABLE]'}, {'vector': 'Reentrancy', 'status': 'Attempted', 'verdict': 'RESILIENT', 'details': 'Attempting Recursive Call... [RESILIENT]'}, {'vector': 'Ownership Override', 'status': 'Attempted', 'verdict"
+  },
+  "instruction_to_brain": "Analyze this exploit pattern. Update Heuristics/FAQ if novel."
+}

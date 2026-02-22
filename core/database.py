@@ -980,6 +980,17 @@ def get_executive_stats():
         c.execute("SELECT SUM(amount_remaining) FROM credit_ledger WHERE source_type='voucher'")
         row = c.fetchone()
         active_vouchers = row[0] if row and row[0] else 0.0
+
+        # ── Intelligence Discovery Staging Count ──────────────────────────
+        staged_sigs = 0
+        staging_file = os.path.join("NotebookLM", "SIGNATURE_CANDIDATES.md")
+        if os.path.exists(staging_file):
+            try:
+                with open(staging_file, "r", encoding="utf-8") as f:
+                    content = f.read()
+                    staged_sigs = content.count("## [New Signature Candidate]")
+            except:
+                staged_sigs = 0
         
         # 3. Vault Balance, Neurons, and Efficiency
         try:
@@ -991,7 +1002,8 @@ def get_executive_stats():
                 "active_vouchers_usd": active_vouchers,
                 "vault_balance_eth": 0.0,
                 "neurons_active": 0,
-                "efficiency_rate": 0.0
+                "efficiency_rate": 0.0,
+                "staged_signatures": staged_sigs
             }
 
         row = c.fetchone()
@@ -1005,7 +1017,8 @@ def get_executive_stats():
             "active_vouchers_usd": active_vouchers,
             "vault_balance_eth": vault_balance,
             "neurons_active": neurons_active,
-            "efficiency_rate": (leads / seen * 100) if seen > 0 else 0.0
+            "efficiency_rate": (leads / seen * 100) if seen > 0 else 0.0,
+            "staged_signatures": staged_sigs
         }
 
 def increment_contracts_seen():

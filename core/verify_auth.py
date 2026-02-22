@@ -8,7 +8,7 @@ from urllib.parse import quote
 
 # Configuration (Match .env)
 BOT_TOKEN = "123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"
-ADMIN_ID = 123456789
+ADMIN_ID = 7695994098
 BASE_URL = "http://localhost:8000/api/brain/status"
 
 def generate_init_data(user_id, token_to_sign_with=BOT_TOKEN):

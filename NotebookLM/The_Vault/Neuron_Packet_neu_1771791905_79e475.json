@@ -1,0 +1,14 @@
+{
+  "synapse_id": "neu_1771791905_79e475",
+  "timestamp": "2026-02-22T21:25:05.306952",
+  "verdict": "BUST_CONFIRMED",
+  "vera_score": 0,
+  "target_contract": "0x...ghost",
+  "sheriff_notes": "Automated flagging of SIMULATION: Ghost Mint Demo.",
+  "exploit_vector": "SIMULATION: Ghost Mint Demo",
+  "technical_context": {
+    "report_hash": "5c25815902c7493bca892039f2a692441761e39b4b2f5622062cf91db8f77337",
+    "raw_data_snippet": "{'vera_score': 0, 'warnings': ['DETECTED: Ghost Mint (Signature A)'], 'note': 'SIMULATION: Ghost Mint Demo', 'report_id': '0a296233-5a26-4a23-8e9c-d9f85079e475', 'report_hash': '5c25815902c7493bca892039f2a692441761e39b4b2f5622062cf91db8f77337', 'timestamp': '1771416351.7192135', 'risk_summary': 'SIMULATION: Ghost Mint Demo', 'milestones': [], 'vitals': {'liquidity': 'SIMULATED', 'owner_risk': 'UNKNOWN'}}"
+  },
+  "instruction_to_brain": "Analyze this exploit pattern. Update Heuristics/FAQ if novel."
+}

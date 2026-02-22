@@ -1,0 +1,14 @@
+{
+  "synapse_id": "neu_1771791937_457694",
+  "timestamp": "2026-02-22T21:25:37.376246",
+  "verdict": "BUST_CONFIRMED",
+  "vera_score": 20,
+  "target_contract": "0xSybilTarget_1771457694",
+  "sheriff_notes": "Automated flagging of Unknown Vulnerability.",
+  "exploit_vector": "Unknown Vulnerability",
+  "technical_context": {
+    "report_hash": "hash",
+    "raw_data_snippet": "{}"
+  },
+  "instruction_to_brain": "Analyze this exploit pattern. Update Heuristics/FAQ if novel."
+}

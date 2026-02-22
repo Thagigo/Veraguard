@@ -1,0 +1,14 @@
+{
+  "synapse_id": "neu_1771792020_765688",
+  "timestamp": "2026-02-22T21:27:00.771665",
+  "verdict": "BUST_CONFIRMED",
+  "vera_score": 10,
+  "target_contract": "0xDeployedFrom_0x95ca",
+  "sheriff_notes": "Automated flagging of Triage Alert (Stateless).",
+  "exploit_vector": "Triage Alert (Stateless)",
+  "technical_context": {
+    "report_hash": "N/A",
+    "raw_data_snippet": "{'risk_summary': 'Triage Alert (Stateless)', 'triage_score': 75, 'warnings': ['Matched Zero-Credit or High Suspicion Heuristics']}"
+  },
+  "instruction_to_brain": "Analyze this exploit pattern. Update Heuristics/FAQ if novel."
+}

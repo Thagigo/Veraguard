@@ -5,8 +5,8 @@ from urllib.parse import parse_qsl
 
 # Values from .env and ProtocolDashboard.tsx
 BOT_TOKEN = "123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"
-ADMIN_ID = "123456789"
-init_data = "auth_date=1771409053&query_id=AAG_DEV&user=%7B%22id%22%3A+123456789%2C+%22first_name%22%3A+%22Admin%22%2C+%22username%22%3A+%22admin%22%2C+%22last_name%22%3A+%22Test%22%2C+%22language_code%22%3A+%22en%22%2C+%22allows_write_to_pm%22%3A+true%7D&hash=95f52384f51459165582dd59d7bb9e32b5cf449cb1a08a3ab3350fb618d01f2b"
+ADMIN_ID = "7695994098"
+init_data = "auth_date=1771409053&query_id=AAG_DEV&user=%7B%22id%22%3A7695994098%2C%22first_name%22%3A%22Admin%22%2C%22username%22%3A%22admin%22%2C%22last_name%22%3A%22Verified%22%2C%22language_code%22%3A%22en%22%2C%22allows_write_to_pm%22%3Atrue%7D&hash=12420eff95178d152e67d30481336e251c610ab19ec74f1d2f9977ce511a318a"
 
 def verify():
     parsed_data = dict(parse_qsl(init_data))

@@ -1,0 +1,6 @@
+﻿[DRIVE] Folder 'The_Vault' exists but not at root. Moving...
+
+Files in The_Vault (your OAuth view): 1
+  E2E_TEST_1771793474.json  [2026-02-22T20:51:46.606Z]
+
+Folder: https://drive.google.com/drive/folders/1R5nJa-7bLjq6CQG2dsyR7djHFLq7-jNP
