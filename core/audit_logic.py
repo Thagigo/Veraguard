@@ -328,6 +328,16 @@ def check_contract(address: str, scan_type: str = "deep", rpc_url: str = "https:
              print(f"Certificate Gen Failed: {e}")
              final_result["certificate"] = None
 
+        # [NEW] Attach Initial Suspicion ("History of Suspicion")
+        # Look up whether this address was previously auto-detected
+        try:
+            from . import database as _db
+            initial = _db.get_initial_suspicion(address)
+            if initial:
+                final_result["initial_detection"] = initial
+        except Exception:
+            pass
+
         # --- 5. UPDATE CACHE (Only for Deep Scans?) ---
         if scan_type == 'deep':
             cache.set_cached_audit(bytecode, final_result)

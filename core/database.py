@@ -65,6 +65,20 @@ def init_db():
         except:
              pass # Already exists
 
+        # [NEW] Initial Suspicion — History of Suspicion (auto-scan persistence)
+        try:
+             cursor.execute("ALTER TABLE audit_reports ADD COLUMN initial_suspicion REAL DEFAULT NULL")
+        except:
+             pass
+        try:
+             cursor.execute("ALTER TABLE audit_reports ADD COLUMN initial_source TEXT DEFAULT NULL")
+        except:
+             pass
+        try:
+             cursor.execute("ALTER TABLE audit_reports ADD COLUMN initial_detected_at REAL DEFAULT NULL")
+        except:
+             pass
+
         # [NEW] Migration: Convert legacy credits to 'purchase' ledger entries
         # Check if users have credits but no ledger entries
         cursor.execute("SELECT user_id, credits FROM users WHERE credits > 0")
@@ -451,6 +465,79 @@ def save_audit_report(report_id: str, report_hash: str, address: str, data: str,
             conn.commit()
         except sqlite3.IntegrityError:
             pass # Silently skip duplicates
+
+def save_initial_suspicion(address: str, score: float, source: str = "chain") -> bool:
+    """
+    Save the FIRST automatic suspicion score for an address (chain_listener / userbot).
+    Only saves on first detection — subsequent calls for the same address are ignored.
+    Returns True if this was the first detection, False if already recorded.
+    """
+    with get_db() as conn:
+        c = conn.cursor()
+        # Check if any report already has an initial_suspicion for this address
+        c.execute(
+            "SELECT 1 FROM audit_reports WHERE address=? AND initial_suspicion IS NOT NULL LIMIT 1",
+            (address,),
+        )
+        if c.fetchone():
+            return False  # Already recorded — don't overwrite first detection
+
+        # Upsert: insert or update existing row for this address
+        # Find existing row (any) to update, or create a sentinel row
+        c.execute(
+            "SELECT report_id FROM audit_reports WHERE address=? ORDER BY timestamp ASC LIMIT 1",
+            (address,),
+        )
+        existing = c.fetchone()
+
+        if existing:
+            c.execute(
+                "UPDATE audit_reports "
+                "SET initial_suspicion=?, initial_source=?, initial_detected_at=? "
+                "WHERE report_id=?",
+                (score, source, time.time(), existing[0]),
+            )
+        else:
+            # No prior report — insert a sentinel row so the info is persisted
+            import uuid
+            c.execute(
+                "INSERT INTO audit_reports "
+                "(report_id, report_hash, address, data, timestamp, vera_score, "
+                " initial_suspicion, initial_source, initial_detected_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    str(uuid.uuid4()), "", address, "{}",
+                    time.time(), 0,
+                    score, source, time.time(),
+                ),
+            )
+        conn.commit()
+        return True
+
+
+def get_initial_suspicion(address: str) -> dict | None:
+    """
+    Returns the earliest recorded auto-scan suspicion for an address, or None.
+    Shape: { score, source, detected_at }
+    """
+    with get_db() as conn:
+        c = conn.cursor()
+        c.execute(
+            "SELECT initial_suspicion, initial_source, initial_detected_at "
+            "FROM audit_reports "
+            "WHERE address=? AND initial_suspicion IS NOT NULL "
+            "ORDER BY initial_detected_at ASC LIMIT 1",
+            (address,),
+        )
+        row = c.fetchone()
+        if not row or row[0] is None:
+            return None
+        return {
+            "score":       row[0],
+            "source":      row[1] or "auto",
+            "detected_at": row[2],
+        }
+
 
 def get_audit_report(report_id: str):
     with get_db() as conn:

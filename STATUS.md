@@ -85,3 +85,18 @@
     -   **CORS Hardening**: Hardened `CORSMiddleware` in `core/main.py` with explicit local origins to restore frontend connectivity.
     -   **Verification**: Validated the `/api/brain/status` endpoint health via a dedicated debug suite (`debug_brain_status.py`).
     -   **Diagnostic**: Logged persistent port 8000 conflicts and provided fallback port survival instructions.
+
+- [2026-02-22] **Phantom Mint Stress Test**:
+    -   **Exploit Documentation**: Created `NotebookLM/Phantom_Mint_Exploit_2026.md` as a synthetic training source for NotebookLM describing signatures and heuristic patterns.
+    -   **Pattern-Aware Userbot**: Upgraded `core/vera_user.py` to detect "Phantom Mint" keywords and fire a targeted reply (`🚨 VeraGuard detected a 100% match for 'Phantom Mint' logic`).
+    -   **SSE Intelligence Update**: Wired `vera_user.py` to broadcast `intelligence_update` SSE events to the Brain UI on every pattern match.
+    -   **Scout Filter**: Added `"phantom_mint"` to the `zero_credit_filters` list in `core/scout.py` for address-level triage.
+    -   **Cognitive Control Plane Toast**: Upgraded `DashboardHome.tsx` intelligence_update toast into a pulsing amber "Cognitive Control Plane" panel with full Thought Stream text.
+    -   **Anti-Ban Protocol**: Maintained stealth measures (human-like delay 5–15s, typing indicator, 3 replies/hr/group rate limit).
+
+- [2026-02-22] **Scoring Engine Synchronization**:
+    -   **Unified Triage Engine**: Created `core/audit_engine.py` — single source of truth for all suspicion scoring. Both `chain_listener` and `vera_user` call `triage_address()`, ensuring Deployer Reputation carries identical +20 weight in automatic and manual scan paths.
+    -   **History of Suspicion**: Added `initial_suspicion`, `initial_source`, and `initial_detected_at` columns to `audit_reports` via non-destructive migration in `database.py`. New helpers `save_initial_suspicion()` / `get_initial_suspicion()` persist first-detection scores (chain listener saves when score ≥ 40%).
+    -   **UI — Initial Detection Banner**: `audit_logic.py` attaches `initial_detection` JSON to scan results; `AuditReport.tsx` renders an amber "📡 History of Suspicion" banner showing the original auto-scan score, source, and timestamp alongside the current logic score.
+    -   **RELOAD_HEURISTICS Broadcast**: `brain_monitor.py` fires a `reload_heuristics` SSE event and calls `POST /api/internal/bump_heuristic_version` after each new filter injection. `main.py` gains `GET /api/internal/heuristic_version` (returns version + filter list). `vera_user.py` runs a background `heuristic_reload_task()` polling every 60s to hot-reload `scout.heuristics` without a process restart.
+

@@ -544,3 +544,34 @@ async def trigger_live_event(req: LiveEventRequest):
     """Internal endpoint for background processes to trigger SSE events."""
     await sse_manager.broadcast(req.event_type, req.data)
     return {"status": "broadcasted"}
+
+# ── Heuristic Version Counter (in-memory) ────────────────────────────────────
+# Incremented by brain_monitor whenever a new filter is injected.
+# Polled by vera_user every 60s to decide whether to reload.
+_heuristic_version: int = 0
+_heuristic_filters: list[str] = []
+
+class BumpHeuristicRequest(BaseModel):
+    new_filter: str
+
+@app.post("/api/internal/bump_heuristic_version")
+async def bump_heuristic_version(req: BumpHeuristicRequest):
+    """Called by brain_monitor after injecting a new Zero-Credit filter."""
+    global _heuristic_version, _heuristic_filters
+    _heuristic_version += 1
+    if req.new_filter not in _heuristic_filters:
+        _heuristic_filters.append(req.new_filter)
+    logging.getLogger("main").info(
+        f"[HEURISTIC] Version bumped to {_heuristic_version} | "
+        f"Filter '{req.new_filter}' added."
+    )
+    return {"status": "bumped", "version": _heuristic_version}
+
+@app.get("/api/internal/heuristic_version")
+async def get_heuristic_version():
+    """Polled by vera_user to detect Brain filter updates."""
+    return {
+        "version": _heuristic_version,
+        "filters": _heuristic_filters,
+    }
+

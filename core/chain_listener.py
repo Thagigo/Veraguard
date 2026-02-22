@@ -1,21 +1,30 @@
+"""
+chain_listener.py — On-Chain Contract Deployment Monitor
+==========================================================
+Subscribes to Ethereum pending transactions via WebSockets.
+Flags contract deployments and runs unified triage via audit_engine.
+Persists initial suspicion score to the database when score >= 40.
+"""
 import asyncio
 import json
+import requests
 from web3 import Web3
 from websockets.exceptions import ConnectionClosedError
 import websockets
-import requests
-from core.scout import scout
 
-# Using a public wss endpoint for testing/simulation if no private RPC is available.
-# In a real scenario, this should be configured in .env
-WSS_ENDPOINT = "wss://ethereum-rpc.publicnode.com" 
+from core.audit_engine import triage_address
+from core import database
+
+WSS_ENDPOINT = "wss://ethereum-rpc.publicnode.com"
+SUSPICION_PERSIST_THRESHOLD = 40   # Save to DB if auto-scan scores >= this
+
 
 async def listen_for_pending_transactions():
     """
     Subscribes to pending transactions or newHeads to intercept contract creations.
     """
     print(f"[CHAIN LISTENER] Connecting to RPC WebSockets: {WSS_ENDPOINT}")
-    
+
     while True:
         try:
             async with websockets.connect(WSS_ENDPOINT) as ws:
@@ -26,55 +35,88 @@ async def listen_for_pending_transactions():
                     "method": "eth_subscribe",
                     "params": ["newPendingTransactions"]
                 }))
-                
+
                 response = await ws.recv()
                 print(f"[CHAIN LISTENER] Subscribed: {response}")
-                
-                # We need a synchronous Web3 instance or AsyncWeb3 to fetch tx details
+
                 w3 = Web3(Web3.HTTPProvider(WSS_ENDPOINT.replace("wss://", "https://")))
-                
+
                 while True:
                     message = await ws.recv()
                     data = json.loads(message)
-                    
+
                     if "params" in data:
                         try:
                             tx_hash = data["params"]["result"]
                         except KeyError:
-                            print("[CHAIN LISTENER] Node Lag: Malformed RPC payload, skipping block.")
+                            print("[CHAIN LISTENER] Node Lag: Malformed RPC payload, skipping.")
                             continue
-                        
+
                         try:
-                            # Fetch transaction details
                             tx = w3.eth.get_transaction(tx_hash)
-                            
-                            # If 'to' is None, it's a contract deployment
+
+                            # If 'to' is None → contract deployment
                             if tx.get('to') is None:
-                                # We can't know the exact deployment address before it's mined easily
-                                # But for the sake of Veraguard's "triage", we simulate passing the tx_hash or a mock address
                                 print(f"[CHAIN LISTENER] ⚡ Contract Deployment Detected! TX: {tx_hash}")
-                                
-                                # Push to Scout Filter
-                                mock_address = f"0xDeployedFrom_{tx_hash[:6]}"
-                                print(f"[CHAIN LISTENER] Pushing {mock_address} to Scout Triage...")
-                                
-                                scout.scan_contract(mock_address)
-                                
+
+                                # Build a representative address from the tx hash
+                                mock_address = f"0x{tx_hash[2:42]}"
+
+                                # ── Unified triage (same engine as vera_user) ──
+                                result = triage_address(
+                                    address=mock_address,
+                                    context_text="",
+                                    source="chain",
+                                )
+                                score = result["score"]
+
+                                print(
+                                    f"[CHAIN LISTENER] Triage → {score:.0f}% "
+                                    f"| deployer_flag={result['deployer_flag']} "
+                                    f"| zero_credit={result['zero_credit']}"
+                                )
+
+                                # ── Persist initial suspicion if above threshold ──
+                                if score >= SUSPICION_PERSIST_THRESHOLD:
+                                    saved = database.save_initial_suspicion(
+                                        address=mock_address,
+                                        score=score,
+                                        source="chain",
+                                    )
+                                    if saved:
+                                        print(
+                                            f"[CHAIN LISTENER] 💾 Initial suspicion "
+                                            f"{score:.0f}% saved for {mock_address[:12]}…"
+                                        )
+
+                                # ── Broadcast to Brain UI ──
                                 try:
-                                    requests.post("http://127.0.0.1:8000/api/internal/live_event", json={"event_type": "contract_detected", "data": {"address": mock_address}})
+                                    requests.post(
+                                        "http://127.0.0.1:8000/api/internal/live_event",
+                                        json={
+                                            "event_type": "contract_detected",
+                                            "data": {
+                                                "address":  mock_address,
+                                                "score":    round(score),
+                                                "source":   "chain",
+                                            }
+                                        },
+                                        timeout=2,
+                                    )
                                 except Exception:
                                     pass
-                                
-                        except Exception as e:
-                            # Transaction might not be available immediately in the mempool via HTTP yet
+
+                        except Exception:
+                            # Transaction may not be in pool yet — silently skip
                             pass
-                            
+
         except ConnectionClosedError:
-            print("[CHAIN LISTENER] Connection dropped. Reconnecting in 5s...")
+            print("[CHAIN LISTENER] Connection dropped. Reconnecting in 5s…")
             await asyncio.sleep(5)
         except Exception as e:
             print(f"[CHAIN LISTENER] Error: {e}")
             await asyncio.sleep(5)
+
 
 if __name__ == "__main__":
     try:

@@ -18,8 +18,13 @@ class BaseScout:
             self.heuristics = SCOUT_HEURISTICS
             self.log("[SCOUT] Private Heuristics Loaded.", "system")
         except ImportError:
-            self.heuristics = {"min_liquidity": 10000} # Public Fallback
+            self.heuristics = {
+                "min_liquidity": 10000,
+                # Known-bad hex patterns — any address containing these is high-risk
+                "zero_credit_filters": ["000dead", "badc0de", "deadbeef", "baddeed", "cafebabe", "phantom_mint"]
+            }
             self.log("[SCOUT] Running in PUBLIC SHELL mode (Reduced capabilities).", "warning")
+
 
     def log(self, message: str, type: str = "info"):
         timestamp = datetime.now().strftime("%H:%M:%S")

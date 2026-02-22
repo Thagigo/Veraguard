@@ -142,6 +142,8 @@ export default function DashboardHome({ userId, onLogout }: DashboardHomeProps) 
     // [NEW] Live Heuristic Heartbeat State
     const [livePing, setLivePing] = useState<string | null>(null);
     const [liveIntelligence, setLiveIntelligence] = useState<string | null>(null);
+    // [NEW] History of Suspicion
+    const [initialDetection, setInitialDetection] = useState<{ score: number; source: string; detected_at: number } | null>(null);
 
 
 
@@ -501,6 +503,7 @@ export default function DashboardHome({ userId, onLogout }: DashboardHomeProps) 
         setVitals(undefined);
         setRedTeamLog([]);
         setReportHash(undefined);
+        setInitialDetection(null);  // [NEW] Clear history on new scan
         setShowDeepDiveModal(false);
 
         try {
@@ -553,6 +556,8 @@ export default function DashboardHome({ userId, onLogout }: DashboardHomeProps) 
                 setVitals(data.vitals)
                 setRedTeamLog(data.red_team_log || [])
                 setReportHash(data.report_hash)
+                // [NEW] History of Suspicion — set if backend returned initial_detection
+                if (data.initial_detection) setInitialDetection(data.initial_detection);
                 // [NEW] Set Cost for Ledger (Default to standard/deep pricing if logic missing)
                 setAuditCost(data.cost_deducted || (confirmDeepDive ? (isMember ? 2 : 3) : (isMember ? 0 : 1)));
 
@@ -670,15 +675,27 @@ export default function DashboardHome({ userId, onLogout }: DashboardHomeProps) 
                 </div>
             )}
 
-            {/* [NEW] Intelligence Update Toast */}
+            {/* [UPGRADED] Thought Stream Toast — Cognitive Control Plane */}
             {liveIntelligence && (
-                <div className="fixed bottom-4 left-4 z-50 bg-emerald-600 text-white px-4 py-3 text-sm font-bold rounded-lg shadow-xl animate-slide-up border border-emerald-400">
-                    <div className="flex items-center gap-2">
-                        <span className="text-xl">🧠</span>
-                        <span>Intelligence Update: New heuristic '{liveIntelligence}' active.</span>
+                <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:w-[420px] z-50 animate-slide-up">
+                    <div className="bg-slate-900 border border-amber-500/60 rounded-xl shadow-2xl shadow-amber-500/20 overflow-hidden">
+                        <div className="h-0.5 bg-amber-400 animate-pulse" />
+                        <div className="px-4 py-3 flex items-start gap-3">
+                            <span className="text-2xl animate-pulse mt-0.5">🧠</span>
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                    <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest">Cognitive Control Plane</span>
+                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping inline-block" />
+                                </div>
+                                <p className="text-sm text-white font-mono leading-snug break-words">
+                                    {liveIntelligence}
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}
+
 
             {!walletAddress ? (
                 <LandingPage onConnect={connectWallet} />
@@ -1029,6 +1046,7 @@ export default function DashboardHome({ userId, onLogout }: DashboardHomeProps) 
                                     reportHash={reportHash}
                                     cost={auditCost} // [NEW]
                                     creditSource={creditSource} // [NEW]
+                                    initialDetection={initialDetection ?? undefined}  // [NEW] History of Suspicion
                                 />
 
                                 <div className="flex justify-center mt-8 mb-12">

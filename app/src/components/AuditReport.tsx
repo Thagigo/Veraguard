@@ -22,6 +22,12 @@ interface RedTeamLog {
     details: string;
 }
 
+interface InitialDetection {
+    score: number;
+    source: string;
+    detected_at: number;
+}
+
 interface Props {
     score: number;
     warnings: string[];
@@ -33,9 +39,10 @@ interface Props {
     onClose?: () => void;
     cost?: number;
     creditSource?: string;
+    initialDetection?: InitialDetection;  // [NEW] History of Suspicion
 }
 
-const AuditReport: React.FC<Props> = ({ score, warnings, riskSummary, milestones, vitals, redTeamLog, reportHash, onClose, cost, creditSource }) => {
+const AuditReport: React.FC<Props> = ({ score, warnings, riskSummary, milestones, vitals, redTeamLog, reportHash, onClose, cost, creditSource, initialDetection }) => {
     const [showLedger, setShowLedger] = useState(false);
     const [expandedMilestone, setExpandedMilestone] = useState<number | null>(null);
 
@@ -107,6 +114,28 @@ const AuditReport: React.FC<Props> = ({ score, warnings, riskSummary, milestones
                 </div>
             </div>
 
+            {/* [NEW] History of Suspicion Banner */}
+            {initialDetection && (
+                <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-3 flex items-start gap-3">
+                    <span className="text-amber-400 text-lg mt-0.5">📡</span>
+                    <div className="flex-1 min-w-0">
+                        <div className="text-[10px] font-bold text-amber-400 uppercase tracking-widest mb-0.5">History of Suspicion</div>
+                        <p className="text-sm text-amber-200">
+                            Initial Detection:{' '}
+                            <span className="font-bold font-mono">{Math.round(initialDetection.score)}%</span>
+                            {' '}({initialDetection.source === 'chain' ? 'Auto-Scan / Chain Listener' : 'Userbot Scan'})
+                            {' '}·{' '}
+                            <span className="text-amber-300/70 text-xs">
+                                {new Date(initialDetection.detected_at * 1000).toLocaleString()}
+                            </span>
+                        </p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                            Current Logic Score: <span className="font-bold text-white">{score}%</span>
+                        </p>
+                    </div>
+                </div>
+            )}
+
             {/* 2. Critical Warnings */}
             {warnings && warnings.length > 0 && (
                 <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-6 relative overflow-hidden">
@@ -174,7 +203,7 @@ const AuditReport: React.FC<Props> = ({ score, warnings, riskSummary, milestones
                             <div className="p-3 flex justify-between items-center">
                                 <div className="flex items-center gap-3">
                                     <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${m.status === 'pass' ? 'bg-emerald-500/20 text-emerald-400' :
-                                            m.status === 'warn' ? 'bg-amber-500/20 text-amber-400' : 'bg-red-500/20 text-red-400'
+                                        m.status === 'warn' ? 'bg-amber-500/20 text-amber-400' : 'bg-red-500/20 text-red-400'
                                         }`}>
                                         {m.status === 'pass' ? '✓' : m.status === 'warn' ? '!' : '✕'}
                                     </div>

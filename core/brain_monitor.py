@@ -86,9 +86,33 @@ def run_loop():
                         print(f"[BRAIN] Injected '{vector}' into Scout Zero-Credit Filters.")
                         
                         try:
-                            requests.post("http://127.0.0.1:8000/api/internal/live_event", json={"event_type": "intelligence_update", "data": {"heuristic": vector}})
+                            # 1. Intelligence update toast (Brain UI)
+                            requests.post(
+                                "http://127.0.0.1:8000/api/internal/live_event",
+                                json={
+                                    "event_type": "intelligence_update",
+                                    "data": {"heuristic": vector},
+                                },
+                            )
+                            # 2. RELOAD_HEURISTICS signal — tells running processes to hot-reload
+                            requests.post(
+                                "http://127.0.0.1:8000/api/internal/live_event",
+                                json={
+                                    "event_type": "reload_heuristics",
+                                    "data": {
+                                        "new_filter": vector,
+                                        "timestamp":  time.time(),
+                                    },
+                                },
+                            )
+                            # 3. Bump the version counter so vera_user poll picks it up
+                            requests.post(
+                                "http://127.0.0.1:8000/api/internal/bump_heuristic_version",
+                                json={"new_filter": vector},
+                            )
                         except Exception as e:
-                            print(f"[BRAIN] Failed to broadcast intelligence update: {e}")
+                            print(f"[BRAIN] Failed to broadcast signals: {e}")
+
             
             # Sleep for 4 hours (14400 seconds)
             time.sleep(14400) 
