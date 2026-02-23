@@ -107,3 +107,9 @@
     -   **History of Suspicion**: Added `initial_suspicion`, `initial_source`, and `initial_detected_at` columns to `audit_reports` via non-destructive migration in `database.py`. New helpers `save_initial_suspicion()` / `get_initial_suspicion()` persist first-detection scores (chain listener saves when score ≥ 40%).
     -   **UI — Initial Detection Banner**: `audit_logic.py` attaches `initial_detection` JSON to scan results; `AuditReport.tsx` renders an amber "📡 History of Suspicion" banner showing the original auto-scan score, source, and timestamp alongside the current logic score.
     -   **RELOAD_HEURISTICS Broadcast**: `brain_monitor.py` fires a `reload_heuristics` SSE event and calls `POST /api/internal/bump_heuristic_version` after each new filter injection. `main.py` gains `GET /api/internal/heuristic_version` (returns version + filter list). `vera_user.py` runs a background `heuristic_reload_task()` polling every 60s to hot-reload `scout.heuristics` without a process restart.
+
+- **2026-02-23**: Implemented **War Room Migration & Dashboard Purification**:
+    -   **War Room**: Relocated from `ProtocolDashboard.tsx` to a collapsible sidebar in `DashboardHome.tsx`. Added tactile "⚔ WAR ROOM" toggle to the global header.
+    -   **Admin Purge**: Purified `ProtocolDashboard.tsx` to serve exclusively as a diagnostic overlay (Organ Map, Reasoning Trace, Scout Terminal).
+    -   **Aesthetics Refinement**: Removed redundant horizontal `WarRoom` ticker from the dashboard. Enforced **Global Dark Mode** across all components (`DashboardHome`, `Top Up`, `Pre-Flight`, `AuditReport`) by replacing light-mode classes and hardcoding a top-level `dark` theme class in `App.tsx`.
+    -   **Backend Heartbeat**: Built `/api/health` endpoint reporting real-time connectivity for Alchemy, Google Drive, and NotebookLM Cloud Bridge.
