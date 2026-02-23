@@ -133,3 +133,39 @@
 - **Reference**: Successfully queried Cloud Notebook: VeraGuard_Intel_2026. Received grounded intelligence response.
 
 ---
+
+
+## [New Local Candidate] Discovery_1771827274
+- **Exploit**: Potential Zero-Day identified in local Digest
+- **Proposed Signature**: `f43d3a3e` (Delegatecall Proxy Pattern)
+- **Rationale**: Multiple entries in the local digest show unauthorized delegatecall patterns.
+- **Detected At**: 2026-02-23T07:14:34.612624
+
+---
+
+
+## [New Local Candidate] Discovery_1771829910
+- **Exploit**: Potential Zero-Day identified in local Digest
+- **Proposed Signature**: `f43d3a3e` (Delegatecall Proxy Pattern)
+- **Rationale**: Multiple entries in the local digest show unauthorized delegatecall patterns.
+- **Detected At**: 2026-02-23T07:58:30.596152
+
+---
+
+
+## [New Local Candidate] Discovery_1771830009
+- **Exploit**: Potential Zero-Day identified in local Digest
+- **Proposed Signature**: `f43d3a3e` (Delegatecall Proxy Pattern)
+- **Rationale**: Multiple entries in the local digest show unauthorized delegatecall patterns.
+- **Detected At**: 2026-02-23T08:00:09.251534
+
+---
+
+
+## [Grounded Intelligence] Cloud_Discovery_1771832063
+- **Exploit**: Phantom-Variant_Alpha (Grounded in 56 sources)
+- **Proposed Signature**: `12420eff`
+- **Rationale**: Matched via SWC-107 & DeFiHackLabs_2024.pdf — correlated pattern across historical datasets in Notebook veraguard-grounded-corpus-v2.
+- **Reference**: Corpus 'veraguard-grounded-corpus-v2' — Grounded Cloud Response Received.
+
+---

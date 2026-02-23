@@ -198,7 +198,7 @@ const AuditReport: React.FC<Props> = ({ score, warnings, riskSummary, milestones
                         <div
                             key={i}
                             onClick={() => setExpandedMilestone(expandedMilestone === i ? null : i)}
-                            className="bg-white/5 border border-white/5 rounded-xl overflow-hidden cursor-pointer hover:bg-white/10 transition-colors"
+                            className="bg-slate-800/40 border border-slate-800 rounded-xl overflow-hidden cursor-pointer hover:bg-slate-800/60 transition-colors"
                         >
                             <div className="p-3 flex justify-between items-center">
                                 <div className="flex items-center gap-3">
@@ -219,7 +219,7 @@ const AuditReport: React.FC<Props> = ({ score, warnings, riskSummary, milestones
                                         exit={{ height: 0, opacity: 0 }}
                                         className="bg-black/20 px-4 pb-4 pt-0"
                                     >
-                                        <p className="text-xs text-slate-400 pl-9 pt-2 border-t border-white/5">
+                                        <p className="text-xs text-slate-400 pl-9 pt-2 border-t border-slate-800">
                                             {m.details}
                                         </p>
                                     </motion.div>

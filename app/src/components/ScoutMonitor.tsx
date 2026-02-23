@@ -27,7 +27,7 @@ const ScoutMonitor = () => {
         };
 
         fetchLogs();
-        const interval = setInterval(fetchLogs, 1000); // 1s polling for "Live" feel
+        const interval = setInterval(fetchLogs, 15000);
         return () => clearInterval(interval);
     }, []);
 
@@ -54,7 +54,7 @@ const ScoutMonitor = () => {
                 <span className="animate-pulse">● REC</span>
             </div>
             <div className="flex-1 overflow-y-auto space-y-1 scrollbar-hide">
-                {logs.map((log, i) => (
+                {Array.isArray(logs) && logs.map((log, i) => (
                     <div key={i} className="flex gap-2">
                         <span className="opacity-30">[{log.timestamp}]</span>
                         <span className={getColor(log.type)}>{log.message}</span>

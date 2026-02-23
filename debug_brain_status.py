@@ -16,7 +16,7 @@ try:
         print("Debugging get_brain_status logic...")
         
         # Mock user_data
-        user_data = {"id": 123456789, "first_name": "Admin"}
+        user_data = {"id": 7695994098, "first_name": "Admin"}
         
         # 1. auth.log_intrusion
         auth.log_intrusion(user_data)

@@ -6,7 +6,7 @@ import urllib.parse
 
 # 1. Setup Mock Secrets
 BOT_TOKEN = "123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11" 
-ADMIN_ID = 123456789
+ADMIN_ID = 7695994098
 
 # 2. Create Data Structure (Keys must be sorted a-z)
 user_data = {
@@ -21,7 +21,7 @@ user_data = {
 data_dict = {
     "auth_date": "1771409053",
     "query_id": "AAG_DEV",
-    "user": json.dumps(user_data)
+    "user": json.dumps(user_data, separators=(',', ':'))
 }
 
 # 3. Create Data Check String

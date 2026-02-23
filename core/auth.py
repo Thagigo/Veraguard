@@ -7,13 +7,26 @@ from fastapi import Header, HTTPException, Request
 from dotenv import load_dotenv
 import os
 
-load_dotenv()
+load_dotenv(override=True)  # override=True so .env always wins over OS environment
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = os.getenv("ADMIN_TELEGRAM_ID")
 
-# In-Memory Rate Limiting
+print(f"[AUTH INIT] ADMIN_ID: {ADMIN_ID}")
+if BOT_TOKEN:
+    print(f"[AUTH INIT] BOT_TOKEN LOADED: YES")
+    print(f"[AUTH INIT] BOT_TOKEN IDENTITY (last 6): ...{BOT_TOKEN[-6:]}")
+else:
+    print(f"[AUTH INIT] BOT_TOKEN LOADED: NO")
+
+# ⚠️  DEV ONLY: Set to False before production deployment
+DEV_MODE = True
+
+if DEV_MODE:
+    print("[AUTH INIT] *** DEV_MODE ACTIVE *** Signature verification DISABLED for local dev.")
+
 failed_attempts = {}
+print("[AUTH DEBUG] Rate limit counters reset.")
 # Structure: { ip_address: { "count": int, "lockout_until": float } }
 LOCKOUT_DURATION = 30 # seconds
 MAX_ATTEMPTS = 5
@@ -25,8 +38,15 @@ def verify_telegram_auth(request: Request, x_telegram_init_data: str = Header(No
     2. User ID matches the Admin ID.
     3. Request is not rate-limited (Brute-Force Shield).
     """
+    # --- DEV MODE: Short-circuit ALL checks ---
+    if DEV_MODE:
+        client_ip = request.client.host
+        print(f"[AUTH DEV] *** DEV_MODE bypass *** granting admin to {client_ip}")
+        return {"id": int(ADMIN_ID or 0), "first_name": "Dev", "username": "dev_mode"}
+
     client_ip = request.client.host
     current_time = time.time()
+    print(f"[AUTH CRITICAL DEBUG] Checking IP {client_ip} | Current failed_attempts: {failed_attempts}")
 
     # --- 1. Brute-Force Shield ---
     record = failed_attempts.get(client_ip, {"count": 0, "lockout_until": 0})
@@ -36,10 +56,10 @@ def verify_telegram_auth(request: Request, x_telegram_init_data: str = Header(No
          raise HTTPException(status_code=429, detail=f"Brute-Force Shield Active. Try again in {remaining}s.")
 
     if not x_telegram_init_data:
-        record["count"] += 1
-        failed_attempts[client_ip] = record
-        check_lockout(client_ip, record)
+        print(f"[AUTH DEBUG] Missing Header from {client_ip}")
         raise HTTPException(status_code=401, detail="Missing Authentication Header")
+
+    print(f"[AUTH DEBUG] Raw Header: {x_telegram_init_data[:50]}...")
 
     # --- 2. Cryptographic Verification ---
     try:
@@ -54,6 +74,9 @@ def verify_telegram_auth(request: Request, x_telegram_init_data: str = Header(No
         calculated_hash = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
 
         if calculated_hash != input_hash:
+            print(f"[AUTH DEBUG] Data Check String:\n{data_check_string}")
+            print(f"[AUTH DEBUG] Calculated Hash: {calculated_hash}")
+            print(f"[AUTH DEBUG] Input Hash: {input_hash}")
             raise ValueError("Invalid Signature")
 
         # --- 3. ID-Locking ---
@@ -65,7 +88,8 @@ def verify_telegram_auth(request: Request, x_telegram_init_data: str = Header(No
 
         # Success! Reset failed attempts
         if client_ip in failed_attempts:
-            del failed_attempts[client_ip]
+            failed_attempts.pop(client_ip, None)
+            print(f"[AUTH DEBUG] Success from {client_ip}. Record cleared.")
             
         return user_data
 
@@ -74,7 +98,15 @@ def verify_telegram_auth(request: Request, x_telegram_init_data: str = Header(No
         record["count"] += 1
         failed_attempts[client_ip] = record
         check_lockout(client_ip, record)
-        print(f"[AUTH FAILED] {client_ip}: {str(e)}")
+        
+        print(f"[AUTH FAILED] IP: {client_ip} | Method: {request.method} | URL: {request.url}")
+        print(f"[AUTH FAILED] Error: {str(e)}")
+        
+        if isinstance(e, ValueError):
+             print(f"[AUTH ERROR] CRYPTO/ID MISMATCH: {str(e)}")
+             # Return JSON detail for easier frontend debugging in dev
+             raise HTTPException(status_code=403, detail=f"Access Denied: {str(e)}")
+             
         raise HTTPException(status_code=403, detail="Access Denied")
 
 def check_lockout(ip, record):

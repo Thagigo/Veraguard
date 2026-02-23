@@ -11,11 +11,12 @@ import requests
 from web3 import Web3
 from websockets.exceptions import ConnectionClosedError
 import websockets
+import os
 
 from core.audit_engine import triage_address
 from core import database
 
-WSS_ENDPOINT = "wss://ethereum-rpc.publicnode.com"
+WSS_ENDPOINT = os.getenv("RPC_WSS_ENDPOINT", "wss://ethereum-rpc.publicnode.com")
 SUSPICION_PERSIST_THRESHOLD = 40   # Save to DB if auto-scan scores >= this
 
 
@@ -110,11 +111,13 @@ async def listen_for_pending_transactions():
                             # Transaction may not be in pool yet — silently skip
                             pass
 
-        except ConnectionClosedError:
-            print("[CHAIN LISTENER] Connection dropped. Reconnecting in 5s…")
+        except (ConnectionClosedError, OSError) as e:
+            if "WinError 64" in str(e):
+                print(f"[CHAIN LISTENER] Network reset (WinError 64) detected. Workspace/VPN likely killed the socket.")
+            print(f"[CHAIN LISTENER] Connection error: {e}. Reconnecting in 5s…")
             await asyncio.sleep(5)
         except Exception as e:
-            print(f"[CHAIN LISTENER] Error: {e}")
+            print(f"[CHAIN LISTENER] Unexpected Error: {e}")
             await asyncio.sleep(5)
 
 

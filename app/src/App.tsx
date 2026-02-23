@@ -29,9 +29,9 @@ export default function App() {
 
     // Theme Sync
     const syncTheme = () => {
-      const isDark = WebApp.colorScheme === 'dark';
-      document.documentElement.classList.toggle('dark', isDark);
-      document.documentElement.style.setProperty('--tg-theme-bg-color', WebApp.backgroundColor || (isDark ? '#000000' : '#ffffff'));
+      document.documentElement.classList.add('dark');
+      const isDark = true; // Enforce dark aesthetic
+      document.documentElement.style.setProperty('--tg-theme-bg-color', WebApp.backgroundColor || '#000000');
       document.documentElement.style.setProperty('--tg-theme-text-color', WebApp.themeParams.text_color || (isDark ? '#ffffff' : '#000000'));
     };
     syncTheme();

@@ -12,7 +12,7 @@ import logging
 from sse_starlette.sse import EventSourceResponse
 
 # Core Modules
-from core import database, payment_handler, payment_gate, auth, scout, brain_sync, red_team
+from core import database, payment_handler, payment_gate, auth, scout, brain_sync, red_team, brain_monitor
 # from .audit_logic import check_contract # Local import in endpoint to avoid circular issues if any
 
 app = FastAPI(title="VeraGuard Audit Engine")
@@ -394,8 +394,7 @@ def audit_contract(request: AuditRequest):
 def get_brain_status(request: Request, user_data: dict = Depends(auth.verify_telegram_auth)):
     print(f"DEBUG: brain/status access from {request.client.host}")
     auth.log_intrusion(user_data)
-    
-    # Count staged signatures
+
     staged_count = 0
     try:
         with open(brain_sync.brain.staging_file, "r") as f:
@@ -410,8 +409,29 @@ def get_brain_status(request: Request, user_data: dict = Depends(auth.verify_tel
         "staged_signatures": staged_count,
         "vault_solvency": "SOLVENT",
         "status": "OPERATIONAL",
-        "admin_user": user_data.get("first_name", "Admin")
+        "admin_user": user_data.get("first_name", "Admin"),
+        "brain_mode": brain_monitor.get_mode(),
+        "source_count": brain_monitor.get_source_count(),
     }
+
+@app.get("/api/brain/last_discovery")
+def get_last_discovery():
+    """Returns the last staged signature candidate from SIGNATURE_CANDIDATES.md."""
+    import os
+    staging_path = os.path.join("NotebookLM", "SIGNATURE_CANDIDATES.md")
+    if not os.path.exists(staging_path):
+        return {"text": None, "timestamp": 0}
+    try:
+        with open(staging_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        entries = [e.strip() for e in content.split("---") if e.strip()]
+        if not entries:
+            return {"text": None, "timestamp": 0}
+        last = entries[-1]
+        return {"text": last, "timestamp": int(time.time())}
+    except Exception as e:
+        return {"text": None, "timestamp": 0}
+
 
 @app.get("/api/scout/logs")
 async def get_scout_logs():
@@ -579,3 +599,92 @@ async def get_heuristic_version():
         "filters": _heuristic_filters,
     }
 
+
+# ── Cloud Health Probe ────────────────────────────────────────────────────────
+
+import os as _os, httpx as _httpx
+
+@app.get("/api/health")
+async def health_check():
+    """
+    Probes external service connectivity:
+      - Alchemy / ETH RPC  (ALCHEMY_URL or RPC_URL)
+      - NotebookLM / Google API  (GOOGLE_API_KEY + NOTEBOOK_ID)
+      - System vitals
+    """
+    results: dict = {}
+
+    # ── 1. Alchemy / Ethereum RPC ─────────────────────────────────────────────
+    alchemy_url = _os.getenv("ALCHEMY_URL") or _os.getenv("RPC_URL") or _os.getenv("ETH_NODE_URL")
+    if alchemy_url:
+        try:
+            async with _httpx.AsyncClient(timeout=5) as c:
+                r = await c.post(alchemy_url, json={"jsonrpc": "2.0", "method": "eth_blockNumber", "params": [], "id": 1})
+            block = int(r.json().get("result", "0x0"), 16) if r.is_success else None
+            results["alchemy"] = {"status": "OK", "block_number": block, "configured": True}
+        except Exception as e:
+            results["alchemy"] = {"status": "ERROR", "error": str(e)[:120], "configured": True}
+    else:
+        results["alchemy"] = {"status": "NOT_CONFIGURED", "configured": False}
+
+    # ── 2. Google API / NotebookLM Cloud Bridge ───────────────────────────────
+    google_key = _os.getenv("GOOGLE_API_KEY")
+    notebook_id = _os.getenv("NOTEBOOK_ID")
+
+    if google_key and notebook_id:
+        try:
+            async with _httpx.AsyncClient(timeout=8) as c:
+                r = await c.get(
+                    "https://generativelanguage.googleapis.com/v1beta/models",
+                    params={"key": google_key},
+                )
+            if r.status_code == 200:
+                results["notebooklm"] = {
+                    "status": "GROUNDED",
+                    "notebook_id": notebook_id,
+                    "source_count": brain_monitor.get_source_count(),
+                    "brain_mode": brain_monitor.get_mode(),
+                }
+            else:
+                results["notebooklm"] = {
+                    "status": "AUTH_ERROR",
+                    "http_status": r.status_code,
+                    "notebook_id": notebook_id,
+                }
+        except Exception as e:
+            results["notebooklm"] = {
+                "status": "UNREACHABLE",
+                "error": str(e)[:120],
+                "notebook_id": notebook_id,
+            }
+    elif notebook_id:
+        results["notebooklm"] = {"status": "NO_API_KEY", "notebook_id": notebook_id}
+    else:
+        results["notebooklm"] = {"status": "NOT_CONFIGURED", "notebook_id": None}
+
+    # ── 3. System vitals ──────────────────────────────────────────────────────
+    staged_count = 0
+    try:
+        with open(brain_sync.brain.staging_file, "r") as f:
+            staged_count = f.read().count("## [New Signature Candidate]")
+    except Exception:
+        pass
+
+    results["system"] = {
+        "status": "OPERATIONAL",
+        "brain_mode": brain_monitor.get_mode(),
+        "source_count": brain_monitor.get_source_count(),
+        "staged_signatures": staged_count,
+        "timestamp": int(time.time()),
+    }
+
+    # ── Summary ───────────────────────────────────────────────────────────────
+    grounded = results["notebooklm"]["status"] == "GROUNDED"
+    rpc_ok = results["alchemy"]["status"] == "OK"
+    results["summary"] = {
+        "cloud_bridge": "GROUNDED" if grounded else "LOCAL",
+        "rpc": "ONLINE" if rpc_ok else ("NOT_CONFIGURED" if not alchemy_url else "DEGRADED"),
+        "overall": "OPERATIONAL" if (grounded or rpc_ok) else "DEGRADED",
+    }
+
+    return results

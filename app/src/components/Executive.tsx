@@ -10,33 +10,123 @@ interface ExecutiveStats {
     staged_signatures?: number;
 }
 
+interface BrainStatus {
+    status: string;
+    brain_mode?: string;
+    source_count?: number;
+    staged_signatures?: number;
+    scout_budget?: number;
+    scout_spend?: number;
+    vault_solvency?: string;
+}
+
 interface ExecutiveProps {
     isOpen: boolean;
     onClose: () => void;
     userId: string;
 }
 
+// ── Organ Card ────────────────────────────────────────────────────────────────
+const OrganCard = ({ label, value, unit, bar, barColour, sub, glow }: {
+    label: string; value: string | number; unit?: string;
+    bar?: number; barColour: string; sub?: string; glow?: string;
+}) => (
+    <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className={`p-5 rounded-xl bg-zinc-800/30 border border-zinc-700/40 hover:border-zinc-600/60 transition-colors group flex flex-col gap-2 ${glow ?? ''}`}
+    >
+        <h3 className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">{label}</h3>
+        <div className="flex items-baseline gap-1.5">
+            <span className="text-3xl font-light text-white font-mono">{value}</span>
+            {unit && <span className={`text-sm ${barColour}`}>{unit}</span>}
+        </div>
+        {bar !== undefined && (
+            <div className="h-0.5 w-full bg-zinc-800 rounded-full overflow-hidden">
+                <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${Math.min(bar, 100)}%` }}
+                    transition={{ duration: 1.2, ease: 'easeOut' }}
+                    className={`h-full rounded-full ${barColour.replace('text-', 'bg-')}/80`}
+                />
+            </div>
+        )}
+        {sub && <p className="text-[10px] text-zinc-600 group-hover:text-zinc-400 transition-colors">{sub}</p>}
+    </motion.div>
+);
+
+// ── Brain Organ ───────────────────────────────────────────────────────────────
+const BrainOrgan = ({ brain }: { brain: BrainStatus | null }) => {
+    const grounded = brain?.brain_mode === 'GROUNDED';
+    const src = brain?.source_count ?? 0;
+    const staged = brain?.staged_signatures ?? 0;
+    const label = grounded ? (src > 0 ? `GROUNDED` : 'GROUNDED') : (brain ? 'LOCAL' : '…');
+    const colour = grounded ? 'text-cyan-400' : 'text-yellow-400';
+    const borderColour = grounded ? 'border-cyan-500/30 hover:border-cyan-400/50' : 'border-yellow-500/20 hover:border-yellow-400/40';
+    const glowClass = grounded ? 'shadow-[0_0_20px_rgba(6,182,212,0.08)]' : '';
+
+    return (
+        <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.35 }}
+            className={`p-5 rounded-xl bg-zinc-800/30 border ${borderColour} transition-colors group flex flex-col gap-2 ${glowClass}`}
+        >
+            <h3 className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">Brain</h3>
+            <div className="flex items-baseline gap-2">
+                <span className={`text-3xl font-light font-mono ${colour}`}>{label}</span>
+                {grounded && src > 0 && (
+                    <span className="text-xs text-cyan-600 font-mono">{src} src</span>
+                )}
+            </div>
+            {grounded && (
+                <div className="h-0.5 w-full bg-zinc-800 rounded-full overflow-hidden">
+                    <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: '100%' }}
+                        transition={{ duration: 1.5 }}
+                        className="h-full rounded-full bg-cyan-500/70 shadow-[0_0_6px_rgba(6,182,212,0.4)]"
+                    />
+                </div>
+            )}
+            <p className="text-[10px] text-zinc-600 group-hover:text-zinc-400 transition-colors">
+                {grounded
+                    ? `Cloud intelligence active · ${staged} sig staged`
+                    : 'Set NOTEBOOK_ID to enable cloud grounding'}
+            </p>
+        </motion.div>
+    );
+};
+
+// ── Main Component ────────────────────────────────────────────────────────────
 const Executive: React.FC<ExecutiveProps> = ({ isOpen, onClose, userId }) => {
     const [stats, setStats] = useState<ExecutiveStats | null>(null);
+    const [brain, setBrain] = useState<BrainStatus | null>(null);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        if (isOpen) {
-            setLoading(true);
-            fetch(`http://localhost:8000/api/executive?user_id=${userId}`)
-                .then(res => res.json())
-                .then(data => {
-                    setStats(data);
-                    setLoading(false);
-                })
-                .catch(err => {
-                    console.error("Exec Verify Failed:", err);
-                    setLoading(false);
-                });
-        }
+        if (!isOpen) return;
+        setLoading(true);
+
+        // Fetch executive revenue stats
+        fetch(`http://localhost:8000/api/executive?user_id=${userId}`)
+            .then(r => r.json())
+            .then(d => { setStats(d); setLoading(false); })
+            .catch(() => setLoading(false));
+
+        // Fetch brain status for GROUNDED indicator
+        const initData =
+            (window as any).Telegram?.WebApp?.initData ||
+            "auth_date=1771409053&query_id=AAG_DEV&user=%7B%22id%22%3A7695994098%2C%22first_name%22%3A%22Admin%22%2C%22username%22%3A%22admin%22%2C%22last_name%22%3A%22Test%22%2C%22language_code%22%3A%22en%22%2C%22allows_write_to_pm%22%3Atrue%7D&hash=f17a0ea19a0f07e0ab4bd7ae41a2f627be61e4e159eee4dd6a431e855f273d57";
+        fetch('http://localhost:8000/api/brain/status', { headers: { 'X-Telegram-Init-Data': initData } })
+            .then(r => r.ok ? r.json() : null)
+            .then(d => { if (d) setBrain(d); })
+            .catch(() => { /* silent */ });
     }, [isOpen, userId]);
 
     if (!isOpen) return null;
+
+    const L = (n: number | undefined, decimals = 2) => loading ? '…' : (n ?? 0).toFixed(decimals);
 
     return (
         <AnimatePresence>
@@ -44,211 +134,81 @@ const Executive: React.FC<ExecutiveProps> = ({ isOpen, onClose, userId }) => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-xl"
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/92 backdrop-blur-xl overflow-y-auto py-8 px-4"
             >
-                <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10 pointer-events-none"></div>
+                <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.06] pointer-events-none" />
 
                 <motion.div
-                    initial={{ scale: 0.9, y: 20 }}
+                    initial={{ scale: 0.94, y: 24 }}
                     animate={{ scale: 1, y: 0 }}
-                    className="relative w-full max-w-6xl p-8 bg-zinc-900/50 border border-zinc-700/50 rounded-2xl shadow-2xl backdrop-blur-md overflow-hidden"
+                    className="relative w-full max-w-5xl bg-zinc-900/60 border border-zinc-700/50 rounded-2xl shadow-2xl backdrop-blur-md overflow-hidden"
                 >
                     {/* Header */}
-                    <div className="flex justify-between items-center mb-8">
+                    <div className="flex justify-between items-center px-8 py-6 border-b border-zinc-800/60">
                         <div>
-                            <h1 className="text-3xl font-thin tracking-widest text-white uppercase font-mono">
+                            <h1 className="text-2xl font-thin tracking-widest text-white uppercase font-mono">
                                 Executive_View <span className="text-rose-500">///</span>
                             </h1>
-                            <p className="text-zinc-500 text-sm mt-1">Founder Clearance Level: ALPHA</p>
+                            <p className="text-zinc-500 text-xs mt-0.5">Founder Clearance Level: ALPHA</p>
                         </div>
                         <button
                             onClick={onClose}
-                            className="px-4 py-2 rounded-full border border-zinc-700 text-zinc-400 hover:text-white hover:border-white transition-all text-xs uppercase tracking-wider"
+                            className="px-4 py-1.5 rounded-full border border-zinc-700 text-zinc-400 hover:text-white hover:border-white transition-all text-xs uppercase tracking-wider"
                         >
-                            Close Secure Channel
+                            Close
                         </button>
                     </div>
 
-                    {/* Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                    <div className="p-8 flex flex-col gap-8">
 
-                        {/* Metric 1: Founder Carry */}
-                        <motion.div
-                            initial={{ y: 20, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            transition={{ delay: 0.1 }}
-                            className="p-6 rounded-xl bg-zinc-800/30 border border-zinc-700/50 hover:border-rose-500/50 transition-colors group"
-                        >
-                            <h3 className="text-zinc-500 text-xs font-bold uppercase tracking-widest mb-2">Total Carry</h3>
-                            <div className="flex items-baseline gap-2">
-                                <span className="text-4xl font-light text-white font-mono">
-                                    {loading ? "..." : stats?.total_carry_usd.toFixed(2)}
-                                </span>
-                                <span className="text-rose-500 text-sm">USD</span>
+                        {/* ── Neural Organ Map (centerpiece) ──────────────── */}
+                        <section>
+                            <p className="text-[9px] uppercase text-zinc-600 tracking-widest mb-4">▸ Neural Organ Map</p>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                                <OrganCard label="Neurons Active" value={loading ? '…' : (stats?.neurons_active ?? 0)} unit="IQ"
+                                    bar={100} barColour="text-blue-500"
+                                    sub="Real-time neural evolution" glow="shadow-[0_0_20px_rgba(59,130,246,0.07)]" />
+                                <OrganCard label="Scout Budget" value={L(brain?.scout_budget)} unit="USD"
+                                    bar={brain ? ((brain.scout_spend ?? 0) / Math.max(brain.scout_budget ?? 1, 1)) * 100 : 0}
+                                    barColour="text-green-500" sub={`Spent: $${L(brain?.scout_spend)}`} />
+                                <BrainOrgan brain={brain} />
+                                <OrganCard label="Sovereign Anchor" value={L(stats?.vault_balance_eth, 4)} unit="ETH"
+                                    bar={85} barColour="text-emerald-500" sub="Emerald Vault solvency" />
+                                <OrganCard label="Staged Signatures" value={loading ? '…' : (stats?.staged_signatures ?? 0)} unit="HEX"
+                                    bar={stats?.staged_signatures ? 100 : 0} barColour="text-violet-500"
+                                    sub="Intelligence staging area" glow="shadow-[0_0_20px_rgba(139,92,246,0.07)]" />
                             </div>
-                            <div className="mt-4 h-1 w-full bg-zinc-800 rounded-full overflow-hidden">
-                                <motion.div
-                                    initial={{ width: 0 }}
-                                    animate={{ width: "100%" }}
-                                    className="h-full bg-rose-500/80"
-                                />
-                            </div>
-                            <p className="mt-2 text-[10px] text-zinc-500 group-hover:text-rose-400 transition-colors">
-                                Fees + Settlements
-                            </p>
-                        </motion.div>
+                        </section>
 
-                        {/* Metric 2: Workforce Liquidity */}
-                        <motion.div
-                            initial={{ y: 20, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            transition={{ delay: 0.2 }}
-                            className="p-6 rounded-xl bg-zinc-800/30 border border-zinc-700/50 hover:border-indigo-500/50 transition-colors group"
-                        >
-                            <h3 className="text-zinc-500 text-xs font-bold uppercase tracking-widest mb-2">Voucher Liability</h3>
-                            <div className="flex items-baseline gap-2">
-                                <span className="text-4xl font-light text-white font-mono">
-                                    {loading ? "..." : stats?.active_vouchers_usd.toFixed(2)}
-                                </span>
-                                <span className="text-indigo-500 text-sm">USD</span>
+                        {/* ── Revenue Metrics ──────────────────────────────── */}
+                        <section>
+                            <p className="text-[9px] uppercase text-zinc-600 tracking-widest mb-4">▸ Revenue & Liability</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <OrganCard label="Total Carry" value={L(stats?.total_carry_usd)} unit="USD"
+                                    bar={100} barColour="text-rose-500" sub="Fees + Settlements" />
+                                <OrganCard label="Voucher Liability" value={L(stats?.active_vouchers_usd)} unit="USD"
+                                    bar={60} barColour="text-indigo-500" sub="Active workforce exposure" />
+                                <OrganCard label="Efficiency Rate" value={L(stats?.efficiency_rate)} unit="%"
+                                    bar={stats?.efficiency_rate ?? 0} barColour="text-amber-500"
+                                    sub="Scout leads / total seen" glow="shadow-[0_0_20px_rgba(245,158,11,0.07)]" />
                             </div>
-                            <div className="mt-4 h-1 w-full bg-zinc-800 rounded-full overflow-hidden">
-                                <motion.div
-                                    initial={{ width: 0 }}
-                                    animate={{ width: "60%" }}
-                                    className="h-full bg-indigo-500/80"
-                                />
-                            </div>
-                            <p className="mt-2 text-[10px] text-zinc-500 group-hover:text-indigo-400 transition-colors">
-                                Workforce Active Exposure
-                            </p>
-                        </motion.div>
-
-                        {/* Metric 3: Insurance Depth */}
-                        <motion.div
-                            initial={{ y: 20, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            transition={{ delay: 0.3 }}
-                            className="p-6 rounded-xl bg-zinc-800/30 border border-zinc-700/50 hover:border-emerald-500/50 transition-colors group"
-                        >
-                            <h3 className="text-zinc-500 text-xs font-bold uppercase tracking-widest mb-2">Sovereign Anchor</h3>
-                            <div className="flex items-baseline gap-2">
-                                <span className="text-4xl font-light text-white font-mono">
-                                    {loading ? "..." : stats?.vault_balance_eth.toFixed(4)}
-                                </span>
-                                <span className="text-emerald-500 text-sm">ETH</span>
-                            </div>
-                            <div className="mt-4 h-1 w-full bg-zinc-800 rounded-full overflow-hidden">
-                                <motion.div
-                                    initial={{ width: 0 }}
-                                    animate={{ width: "85%" }}
-                                    className="h-full bg-emerald-500/80"
-                                />
-                            </div>
-                            <p className="mt-2 text-[10px] text-zinc-500 group-hover:text-emerald-400 transition-colors">
-                                Emerald Vault Solvency
-                            </p>
-                        </motion.div>
-
-                        {/* Metric 4: Neural Evolution [NEW] */}
-                        <motion.div
-                            initial={{ y: 20, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            transition={{ delay: 0.4 }}
-                            className="p-6 rounded-xl bg-zinc-800/30 border border-zinc-700/50 hover:border-blue-500/50 transition-colors group shadow-[0_0_20px_rgba(59,130,246,0.1)]"
-                        >
-                            <h3 className="text-zinc-500 text-xs font-bold uppercase tracking-widest mb-2">Neurons Active</h3>
-                            <div className="flex items-baseline gap-2">
-                                <span className="text-4xl font-light text-white font-mono">
-                                    {loading ? "..." : stats?.neurons_active}
-                                </span>
-                                <span className="text-blue-500 text-sm">IQ</span>
-                            </div>
-                            <div className="mt-4 h-1 w-full bg-zinc-800 rounded-full overflow-hidden">
-                                <motion.div
-                                    initial={{ width: 0 }}
-                                    animate={{ width: "100%" }}
-                                    transition={{ duration: 2, ease: "easeOut" }}
-                                    className="h-full bg-blue-500/80 shadow-[0_0_10px_rgba(59,130,246,0.5)]"
-                                />
-                            </div>
-                            <p className="mt-2 text-[10px] text-zinc-500 group-hover:text-blue-400 transition-colors">
-                                Real-time Neural Bridge Evolution
-                            </p>
-                        </motion.div>
-
-                        {/* Metric 5: Scout Efficiency Rate [NEW] */}
-                        <motion.div
-                            initial={{ y: 20, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            transition={{ delay: 0.5 }}
-                            className="p-6 rounded-xl bg-zinc-800/30 border border-zinc-700/50 hover:border-amber-500/50 transition-colors group shadow-[0_0_20px_rgba(245,158,11,0.1)]"
-                        >
-                            <h3 className="text-zinc-500 text-xs font-bold uppercase tracking-widest mb-2">Efficiency Rate</h3>
-                            <div className="flex items-baseline gap-2">
-                                <span className="text-4xl font-light text-white font-mono">
-                                    {loading ? "..." : (stats?.efficiency_rate || 0).toFixed(2)}
-                                </span>
-                                <span className="text-amber-500 text-sm">%</span>
-                            </div>
-                            <div className="mt-4 h-1 w-full bg-zinc-800 rounded-full overflow-hidden relative">
-                                <motion.div
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${Math.min((stats?.efficiency_rate || 0), 100)}%` }}
-                                    transition={{ duration: 1.5, ease: "easeOut" }}
-                                    className="h-full bg-amber-500/80 shadow-[0_0_10px_rgba(245,158,11,0.5)]"
-                                />
-                            </div>
-                            <p className="mt-2 text-[10px] text-zinc-500 group-hover:text-amber-400 transition-colors">
-                                Scout Leads / Total Seen
-                            </p>
-                        </motion.div>
-
-                        {/* Metric 6: Staged Signatures [NEW] */}
-                        <motion.div
-                            initial={{ y: 20, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            transition={{ delay: 0.6 }}
-                            className="p-6 rounded-xl bg-zinc-800/30 border border-zinc-700/50 hover:border-violet-500/50 transition-colors group shadow-[0_0_20px_rgba(139,92,246,0.1)]"
-                        >
-                            <h3 className="text-zinc-500 text-xs font-bold uppercase tracking-widest mb-2">Staged Signatures</h3>
-                            <div className="flex items-baseline gap-2">
-                                <span className="text-4xl font-light text-white font-mono">
-                                    {loading ? "..." : (stats?.staged_signatures || 0)}
-                                </span>
-                                <span className="text-violet-500 text-sm">HEX</span>
-                            </div>
-                            <div className="mt-4 h-1 w-full bg-zinc-800 rounded-full overflow-hidden relative">
-                                <motion.div
-                                    initial={{ width: 0 }}
-                                    animate={{ width: stats?.staged_signatures ? "100%" : "0%" }}
-                                    transition={{ duration: 1.5, ease: "easeOut" }}
-                                    className="h-full bg-violet-500/80 shadow-[0_0_10px_rgba(139,92,246,0.5)]"
-                                />
-                            </div>
-                            <p className="mt-2 text-[10px] text-zinc-500 group-hover:text-violet-400 transition-colors">
-                                Intelligence Bridge Staging Area
-                            </p>
-                        </motion.div>
+                        </section>
                     </div>
 
-                    {/* Footer / Status */}
-                    <div className="mt-8 pt-6 border-t border-zinc-800 flex justify-between items-center">
+                    {/* Footer */}
+                    <div className="px-8 py-4 border-t border-zinc-800/60 flex items-center justify-between">
                         <div className="flex gap-4">
                             <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                                <span className="text-xs text-zinc-400 uppercase">Settlement Engine: ONLINE</span>
+                                <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                                <span className="text-[10px] text-zinc-500 uppercase">Settlement Engine: ONLINE</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse delay-75"></div>
-                                <span className="text-xs text-zinc-400 uppercase">Revenue Bot: ACTIVE</span>
+                                <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse delay-75" />
+                                <span className="text-[10px] text-zinc-500 uppercase">Revenue Bot: ACTIVE</span>
                             </div>
                         </div>
-                        <div className="text-right">
-                            <p className="text-[10px] text-zinc-600 font-mono">SYSTEM_ID: VERA_CORE_V1.2</p>
-                        </div>
+                        <span className="text-[9px] text-zinc-700 font-mono">VERA_CORE_V1.2</span>
                     </div>
-
                 </motion.div>
             </motion.div>
         </AnimatePresence>
