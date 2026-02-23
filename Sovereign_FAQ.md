@@ -34,3 +34,45 @@ Yes. All your certificates are JSON files in `NotebookLM/The_Vault`. You own the
 **A:** The Autonomous CNS has detected a rising trend in **Recursive Reentrancy**. 
 This exploit typically involves manipulating contract state to bypass validation. 
 *Heuristic Update has been deployed to the Audit Engine.*
+
+
+## Q: What is the 'SIMULATION: Safe Contract Demo' vulnerability?
+**A:** The Autonomous CNS has detected a rising trend in **SIMULATION: Safe Contract Demo**. 
+This exploit typically involves manipulating contract state to bypass validation. 
+*Heuristic Update has been deployed to the Audit Engine.*
+
+
+## Q: What is the 'SIMULATION: Multi-Layer Deep Dive Analysis' vulnerability?
+**A:** The Autonomous CNS has detected a rising trend in **SIMULATION: Multi-Layer Deep Dive Analysis**. 
+This exploit typically involves manipulating contract state to bypass validation. 
+*Heuristic Update has been deployed to the Audit Engine.*
+
+
+## Q: What is the 'SIMULATION: Ghost Mint Demo' vulnerability?
+**A:** The Autonomous CNS has detected a rising trend in **SIMULATION: Ghost Mint Demo**. 
+This exploit typically involves manipulating contract state to bypass validation. 
+*Heuristic Update has been deployed to the Audit Engine.*
+
+
+## Q: What is the 'Unknown Vulnerability' vulnerability?
+**A:** The Autonomous CNS has detected a rising trend in **Unknown Vulnerability**. 
+This exploit typically involves manipulating contract state to bypass validation. 
+*Heuristic Update has been deployed to the Audit Engine.*
+
+
+## Q: What is the 'Test Summary' vulnerability?
+**A:** The Autonomous CNS has detected a rising trend in **Test Summary**. 
+This exploit typically involves manipulating contract state to bypass validation. 
+*Heuristic Update has been deployed to the Audit Engine.*
+
+
+## Q: What is the 'Critical Exploit' vulnerability?
+**A:** The Autonomous CNS has detected a rising trend in **Critical Exploit**. 
+This exploit typically involves manipulating contract state to bypass validation. 
+*Heuristic Update has been deployed to the Audit Engine.*
+
+
+## Q: What is the 'Triage Alert (Stateless)' vulnerability?
+**A:** The Autonomous CNS has detected a rising trend in **Triage Alert (Stateless)**. 
+This exploit typically involves manipulating contract state to bypass validation. 
+*Heuristic Update has been deployed to the Audit Engine.*
