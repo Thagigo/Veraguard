@@ -15,6 +15,10 @@ import os
 
 from core.audit_engine import triage_address
 from core import database
+from dotenv import load_dotenv
+
+# Load Environment Variables
+load_dotenv()
 
 WSS_ENDPOINT = os.getenv("RPC_WSS_ENDPOINT", "wss://ethereum-rpc.publicnode.com")
 SUSPICION_PERSIST_THRESHOLD = 40   # Save to DB if auto-scan scores >= this

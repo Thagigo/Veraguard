@@ -86,7 +86,9 @@ async def broadcast_frontier_summary(update: Update, context: ContextTypes.DEFAU
     await update.message.reply_text(msg, parse_mode="Markdown")
 
 if __name__ == '__main__':
-    # ...
+    # Load Environment Variables
+    load_dotenv()
+    
     application = ApplicationBuilder().token(os.getenv("BOT_TOKEN")).build()
     
     async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):

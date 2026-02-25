@@ -8,6 +8,10 @@ import time
 import datetime
 import requests
 from collections import Counter
+from dotenv import load_dotenv
+
+# Load Environment Variables
+load_dotenv()
 
 # Configuration
 VAULT_PATH = os.path.join("NotebookLM", "The_Vault")

@@ -113,3 +113,10 @@
     -   **Admin Purge**: Purified `ProtocolDashboard.tsx` to serve exclusively as a diagnostic overlay (Organ Map, Reasoning Trace, Scout Terminal).
     -   **Aesthetics Refinement**: Removed redundant horizontal `WarRoom` ticker from the dashboard. Enforced **Global Dark Mode** across all components (`DashboardHome`, `Top Up`, `Pre-Flight`, `AuditReport`) by replacing light-mode classes and hardcoding a top-level `dark` theme class in `App.tsx`.
     -   **Backend Heartbeat**: Built `/api/health` endpoint reporting real-time connectivity for Alchemy, Google Drive, and NotebookLM Cloud Bridge.
+- **2026-02-23**: **System Orchestration & Stability Overhaul**:
+    -   **5-Instance Discovery**: Formally identified and documented the 5 core system processes (Backend, Frontend, Synapse Worker, Security Listeners, Telegram Userbot).
+    -   **Startup Guide**: Created `STARTUP_GUIDE.md` (and implementation_plan.md) with definitive commands for each instance.
+    -   **Dependency Hardening**: Resolved missing `itsdangerous`, `telethon`, and `sse-starlette` libraries in the virtual environment.
+    -   **Environmental Patches**: Patched `brain_monitor.py`, `chain_listener.py`, and `vera_bot.py` to ensure `.env` loading for standalone execution.
+    -   **Neural Bridge Fix**: Resolved Google Drive `invalid_scope` errors in `synapse_worker.py` by aligning requested scopes with the `drive.file` token restricted by OAuth.
+    -   **Verification**: All 5 instances verified as startable/operational.

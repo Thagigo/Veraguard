@@ -27,7 +27,7 @@ DRIVE_SYNC_ENABLED = True # Enabled for production neural bridge
 USER_EMAIL = os.getenv("USER_EMAIL") # Set this in .env for Service Account sharing
 
 # Google API Config
-SCOPES = ['https://www.googleapis.com/auth/drive']
+SCOPES = ['https://www.googleapis.com/auth/drive.file']
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SERVICE_ACCOUNT_FILE = os.path.join(BASE_DIR, 'service_account.json')
 TOKEN_FILE = os.path.join(BASE_DIR, 'token.json')
