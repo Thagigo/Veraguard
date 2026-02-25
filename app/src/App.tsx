@@ -10,6 +10,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 export default function App() {
   const [verified, setVerified] = useState(false);
   const [userId, setUserId] = useState<string>('');
+  const [envMode, setEnvMode] = useState<string>('PRODUCTION');
 
   useEffect(() => {
     // 1. Initialize Telegram
@@ -37,6 +38,19 @@ export default function App() {
     syncTheme();
     WebApp.onEvent('themeChanged', syncTheme);
 
+    const checkEnv = async () => {
+      try {
+        const res = await fetch('http://localhost:8000/api/health');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.env_mode) setEnvMode(data.env_mode);
+        }
+      } catch (e) {
+        console.error("Health check failed", e);
+      }
+    };
+    checkEnv();
+
   }, []);
 
   const handleLogout = () => {
@@ -53,7 +67,12 @@ export default function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
-        <div className="min-h-screen bg-slate-900 text-white font-sans selection:bg-emerald-500/30">
+        <div className="min-h-screen bg-slate-900 text-white font-sans selection:bg-emerald-500/30 relative">
+          {envMode !== 'PRODUCTION' && (
+            <div className="fixed top-20 right-4 md:right-10 z-[100] pointer-events-none opacity-50 font-bold text-slate-500 border border-slate-600 px-3 py-1 rounded bg-slate-900/50 backdrop-blur-sm shadow-xl flex items-center gap-2 text-xs md:text-sm tracking-widest uppercase">
+              <span className="text-xl">🔬</span> LAB MODE
+            </div>
+          )}
           <Routes>
             <Route path="/" element={<DashboardHome userId={userId} onLogout={handleLogout} />} />
             <Route path="/vault" element={<Vault userId={userId} />} />

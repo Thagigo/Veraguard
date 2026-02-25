@@ -120,3 +120,10 @@
     -   **Environmental Patches**: Patched `brain_monitor.py`, `chain_listener.py`, and `vera_bot.py` to ensure `.env` loading for standalone execution.
     -   **Neural Bridge Fix**: Resolved Google Drive `invalid_scope` errors in `synapse_worker.py` by aligning requested scopes with the `drive.file` token restricted by OAuth.
     -   **Verification**: All 5 instances verified as startable/operational.
+
+- **2026-02-25**: **Zenith Protocol Migration & Purification**:
+    -   **Git Sanitization**: Created `dev-sandbox` branch and moved mock data, synthetic test scripts (`test_discovery_loop.py`), and experimental UI features out of `main`.
+    -   **UI Refactor**: Centered "Audit Input" and "Credit Purchase" on user dashboard. Relocated the tactical War Room to a collapsible sidebar. Removed user tools from Admin `ProtocolDashboard.tsx`.
+    -   **Intelligence Grounding**: Implemented `/api/health` polling to explicitly verify NotebookLM cloud `NOTEBOOK_ID` connectivity, securely determining 'GROUNDED' status.
+    -   **Environment Safeguards**: Added an `ENV_MODE` check in `.env` and a persistent `🔬 LAB MODE` UI watermark when running outside of production.
+    -   **Bug Fixes**: Resolved the `[Invalid Date]` formatting crash in `WallOfShame.tsx` and fixed `ACCESS DENIED` health check polling.

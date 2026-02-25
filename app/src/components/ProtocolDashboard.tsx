@@ -60,13 +60,32 @@ const ProtocolDashboard = ({ onClose, userId }: { onClose: () => void; userId: s
             "auth_date=1771409053&query_id=AAG_DEV&user=%7B%22id%22%3A7695994098%2C%22first_name%22%3A%22Admin%22%2C%22username%22%3A%22admin%22%2C%22last_name%22%3A%22Test%22%2C%22language_code%22%3A%22en%22%2C%22allows_write_to_pm%22%3Atrue%7D&hash=f17a0ea19a0f07e0ab4bd7ae41a2f627be61e4e159eee4dd6a431e855f273d57";
 
         const poll = async () => {
+            let currentStatus: any = {};
             try {
                 const res = await fetch(`${API_BASE}/api/brain/status`, { headers: { 'X-Telegram-Init-Data': initData } });
-                if (res.ok) setStatus(await res.json());
-                else setStatus(s => s ?? { status: res.status === 403 ? 'ACCESS DENIED' : 'OFFLINE', scout_budget: 0, scout_spend: 0, staged_signatures: 0, vault_solvency: 'LOCKED' });
+                if (res.ok) {
+                    currentStatus = await res.json();
+                } else {
+                    currentStatus = { status: res.status === 403 ? 'ACCESS DENIED' : 'OFFLINE', scout_budget: 0, scout_spend: 0, staged_signatures: 0, vault_solvency: 'LOCKED' };
+                }
             } catch {
-                setStatus(s => s ?? { status: 'OFFLINE', scout_budget: 0, scout_spend: 0, staged_signatures: 0, vault_solvency: 'UNKNOWN' });
+                currentStatus = { status: 'OFFLINE', scout_budget: 0, scout_spend: 0, staged_signatures: 0, vault_solvency: 'UNKNOWN' };
             }
+
+            // [NEW] Fetch Intelligence Grounding Health
+            try {
+                const healthRes = await fetch(`${API_BASE}/api/health`);
+                if (healthRes.ok) {
+                    const healthData = await healthRes.json();
+                    if (healthData.notebooklm) {
+                        currentStatus.brain_mode = healthData.notebooklm.status === 'GROUNDED' ? 'GROUNDED' : 'LOCAL';
+                        currentStatus.source_count = healthData.notebooklm.source_count || 0;
+                    }
+                }
+            } catch { /* silent */ }
+
+            setStatus(currentStatus);
+
             try {
                 const r = await fetch(`${API_BASE}/api/brain/last_discovery`);
                 if (r.ok) { const d = await r.json(); if (d?.text) setLastDiscovery(d); }

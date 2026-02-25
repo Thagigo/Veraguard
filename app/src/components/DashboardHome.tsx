@@ -811,9 +811,9 @@ export default function DashboardHome({ userId, onLogout }: DashboardHomeProps) 
 
                     <div className="flex flex-1 overflow-hidden">
                         <div className="flex-1 overflow-y-auto">
-                            <main className="container mx-auto px-4 py-8 pb-32">
+                            <main className={`container mx-auto px-4 py-8 pb-32 ${score === null && !analyzing ? 'flex flex-col justify-center min-h-[calc(100vh-120px)]' : ''}`}>
                                 {score === null && (
-                                    <div className="max-w-xl mx-auto mb-12">
+                                    <div className="max-w-xl mx-auto mb-12 w-full">
                                         <AnimatePresence mode="wait">
                                             {!showAuditInput ? (
                                                 <motion.div

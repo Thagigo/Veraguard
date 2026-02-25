@@ -1,0 +1,26 @@
+
+> app@0.0.0 build
+> tsc -b && vite build
+
+src/components/AuditReport.tsx(45,115): error TS6133: 'onClose' is declared but its value is never read.
+src/components/AuditReport.tsx(53,11): error TS6133: 'borderClass' is declared but its value is never read.
+src/components/DistributionReceipt.tsx(30,46): error TS2353: Object literal may only specify known properties, and 'exit' does not exist in type 'Transition<any>'.
+src/components/ErrorBoundary.tsx(1,8): error TS6133: 'React' is declared but its value is never read.
+src/components/ErrorBoundary.tsx(1,28): error TS1484: 'ErrorInfo' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/components/ErrorBoundary.tsx(1,39): error TS1484: 'ReactNode' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/components/Leaderboard.tsx(68,44): error TS2339: Property 'is_member' does not exist on type 'LeaderboardEntry'.
+src/components/LogicDNA.tsx(41,17): error TS2322: Type '{ hidden: { scale: number; opacity: number; rotate: number; }; visible: { scale: number; opacity: number; rotate: number; transition: { duration: number; ease: string; }; }; }' is not assignable to type 'Variants'.
+  Property 'visible' is incompatible with index signature.
+    Type '{ scale: number; opacity: number; rotate: number; transition: { duration: number; ease: string; }; }' is not assignable to type 'Variant'.
+      Type '{ scale: number; opacity: number; rotate: number; transition: { duration: number; ease: string; }; }' is not assignable to type 'TargetAndTransition'.
+        Type '{ scale: number; opacity: number; rotate: number; transition: { duration: number; ease: string; }; }' is not assignable to type '{ transition?: Transition<any> | undefined; transitionEnd?: ResolvedValues$1 | undefined; }'.
+          Types of property 'transition' are incompatible.
+            Type '{ duration: number; ease: string; }' is not assignable to type 'Transition<any> | undefined'.
+              Type '{ duration: number; ease: string; }' is not assignable to type 'TransitionWithValueOverrides<any>'.
+                Type '{ duration: number; ease: string; }' is not assignable to type 'ValueAnimationTransition<any>'.
+                  Types of property 'ease' are incompatible.
+                    Type 'string' is not assignable to type 'Easing | Easing[] | undefined'.
+src/components/PreFlightTriage.tsx(2,18): error TS6133: 'AnimatePresence' is declared but its value is never read.
+src/components/PreFlightTriage.tsx(16,35): error TS6133: 'cost' is declared but its value is never read.
+src/components/PreFlightTriage.tsx(21,11): error TS6133: 'recommendedTier' is declared but its value is never read.
+src/components/ProtocolLedger.tsx(13,67): error TS6133: 'highlightHash' is declared but its value is never read.

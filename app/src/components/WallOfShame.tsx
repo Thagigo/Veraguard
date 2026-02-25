@@ -117,7 +117,14 @@ const WantedPoster = ({ report, onShare }: { report: ShameReport, onShare: (r: S
                 </div>
                 <div className="flex justify-between border-b border-amber-900/10 pb-1">
                     <span className="font-bold text-amber-900/70">DATE:</span>
-                    <span className="text-amber-950">{new Date(report.timestamp * 1000).toLocaleDateString()}</span>
+                    <span className="text-amber-950">
+                        {(() => {
+                            const ts = report.timestamp;
+                            if (!ts) return "Unknown Date";
+                            const d = typeof ts === 'string' ? new Date(ts) : new Date(ts * 1000);
+                            return isNaN(d.getTime()) ? "Unknown Date" : d.toLocaleDateString();
+                        })()}
+                    </span>
                 </div>
             </div>
 
