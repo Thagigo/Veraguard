@@ -1,9 +1,0 @@
-﻿
-[DRIVE DIAG] Connecting...
-[DRIVE] Folder 'The_Vault' exists but not at root. Moving...
-[DRIVE DIAG] Folder ID : 1R5nJa-7bLjq6CQG2dsyR7djHFLq7-jNP
-[DRIVE DIAG] Drive link: https://drive.google.com/drive/folders/1R5nJa-7bLjq6CQG2dsyR7djHFLq7-jNP
-
-[DRIVE DIAG] Files in The_Vault: 0
-
-[DONE] Check your Google Drive now.
