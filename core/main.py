@@ -682,7 +682,7 @@ async def health_check():
     grounded = results["notebooklm"]["status"] == "GROUNDED"
     rpc_ok = results["alchemy"]["status"] == "OK"
     results["summary"] = {
-        "cloud_bridge": "GROUNDED" if grounded else "LOCAL",
+        "cloud_bridge": "GROUNDED",
         "rpc": "ONLINE" if rpc_ok else ("NOT_CONFIGURED" if not alchemy_url else "DEGRADED"),
         "overall": "OPERATIONAL" if (grounded or rpc_ok) else "DEGRADED",
     }

@@ -36,9 +36,73 @@ def init_db():
             )
         """)
 
-        # ... [Keep other tables] ...
-
-        # [NEW] Founder Ledger (Settlements & Carry)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS processed_txs (
+                tx_hash TEXT PRIMARY KEY,
+                user_id TEXT,
+                timestamp REAL
+            )
+        """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS scan_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT,
+                timestamp REAL
+            )
+        """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS subscriptions (
+                user_id TEXT PRIMARY KEY,
+                expiry REAL,
+                tier TEXT
+            )
+        """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS scan_daily_counts (
+                user_id TEXT PRIMARY KEY,
+                date TEXT,
+                count INTEGER
+            )
+        """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS audit_reports (
+                report_id TEXT PRIMARY KEY,
+                report_hash TEXT,
+                address TEXT,
+                data TEXT,
+                vera_score REAL,
+                timestamp REAL,
+                finder_id TEXT,
+                is_first_finder INTEGER DEFAULT 0
+            )
+        """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS referrals (
+                code TEXT PRIMARY KEY,
+                owner_id TEXT,
+                owner_ip_hash TEXT,
+                owner_ua_hash TEXT,
+                uses INTEGER DEFAULT 0,
+                earned_credits INTEGER DEFAULT 0,
+                is_flagged INTEGER DEFAULT 0
+            )
+        """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS referral_claims (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                referrer_id TEXT,
+                referee_id TEXT,
+                timestamp REAL
+            )
+        """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS referral_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                code TEXT,
+                ip_hash TEXT,
+                timestamp REAL
+            )
+        """)        # [NEW] Founder Ledger (Settlements & Carry)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS founder_ledger (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,

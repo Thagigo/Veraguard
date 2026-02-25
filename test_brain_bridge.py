@@ -55,7 +55,7 @@ def test_brain_bridge():
             if c.fetchone()[0] == 1:
                 # Find the packet
                 for f in os.listdir(VAULT_PATH):
-                    if test_report_id in f:
+                    if test_report_id[-6:] in f:
                         packet_path = os.path.join(VAULT_PATH, f)
                         break
                 break

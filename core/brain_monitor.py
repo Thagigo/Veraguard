@@ -71,7 +71,7 @@ This exploit typically involves manipulating contract state to bypass validation
 
 
 # ── Module-level brain mode ───────────────────────────────────────────────────
-_BRAIN_MODE = "LOCAL"
+_BRAIN_MODE = "GROUNDED"
 _SOURCE_COUNT = 0
 
 def get_mode() -> str:

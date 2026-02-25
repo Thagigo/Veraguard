@@ -1262,11 +1262,11 @@ export default function DashboardHome({ userId, onLogout }: DashboardHomeProps) 
                         </div>
 
                         {/* ── Tactical Rail: War Room ─────────────────────────── */}
-                        {railOpen && (
-                            <div className="w-[300px] shrink-0 border-l border-slate-800 bg-slate-950 flex flex-col overflow-y-auto animate-slide-left">
+                        <div className={`shrink-0 border-slate-800 bg-slate-950 flex flex-col overflow-y-auto transition-[width,border] duration-300 ease-in-out ${railOpen ? 'w-[300px] border-l' : 'w-0 border-l-0 overflow-hidden'}`}>
+                            <div className="w-[300px] h-full">
                                 <WarRoom compact />
                             </div>
-                        )}
+                        </div>
                     </div>
                 </>
             )

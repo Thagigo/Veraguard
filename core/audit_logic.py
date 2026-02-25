@@ -4,6 +4,7 @@ import hashlib
 import random
 from web3 import Web3
 import time
+import re
 from . import cache
 from . import triage
 from . import hunter_agent
@@ -64,7 +65,7 @@ def perform_triage_scan(bytecode: str) -> dict:
     is_proxy = False
 
     # --- HEURISTIC PROXY DETECTION ---
-    if "f4" in bytecode or "360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc" in bytecode:
+    if re.search(r'f4|360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc', bytecode):
             is_proxy = True
 
     # --- 2. TRIAGE TIER (Gemini 3 Flash) ---
@@ -73,15 +74,15 @@ def perform_triage_scan(bytecode: str) -> dict:
     warnings.extend(triage_result['triage_warnings'])
 
     # --- 3. CORE LOGIC (Signatures) ---
-    if SIGNATURES_OF_MALICE['ghost_mint']['signature_hex'] in bytecode:
+    if re.search(SIGNATURES_OF_MALICE['ghost_mint']['signature_hex'], bytecode):
             warnings.append(f"DETECTED: {SIGNATURES_OF_MALICE['ghost_mint']['name']}")
             vera_score -= SIGNATURES_OF_MALICE['ghost_mint']['score_deduction']
 
-    if "c4d66de8" in bytecode and SIGNATURES_OF_MALICE['uups_silent_death']['signature_hex'] not in bytecode:
+    if re.search(r'c4d66de8', bytecode) and not re.search(SIGNATURES_OF_MALICE['uups_silent_death']['signature_hex'], bytecode):
             warnings.append(f"DETECTED: {SIGNATURES_OF_MALICE['uups_silent_death']['name']}")
             vera_score -= SIGNATURES_OF_MALICE['uups_silent_death']['score_deduction']
 
-    if SIGNATURES_OF_MALICE['legacy_math']['panic_signature'] not in bytecode:
+    if not re.search(SIGNATURES_OF_MALICE['legacy_math']['panic_signature'], bytecode):
             warnings.append(f"DETECTED: {SIGNATURES_OF_MALICE['legacy_math']['name']}")
             vera_score -= SIGNATURES_OF_MALICE['legacy_math']['score_deduction']
     
