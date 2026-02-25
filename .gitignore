@@ -214,3 +214,4 @@ core/service_account.json
 core/token.json
 core/credentials.json
 *.db
+vera_user.session
