@@ -1,0 +1,37 @@
+﻿
+=== E2E BRAIN BRIDGE TEST ===
+
+[1/4] Triggering synthetic Bust for 0xTEST_2a17f51c...
+.\.venv\Scripts\python.exe : Traceback (most rece
+nt call last):
+At line:1 char:1
++ .\.venv\Scripts\python.exe test_brain_bridge.py
+ *>&1 | Out-File -Enco ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~
+    + CategoryInfo          : NotSpecified: (Tra 
+   ceback (most recent call last)::String) [],   
+  RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "C:\Users\baoph\Documents\Veraguard\test_b
+rain_bridge.py", line 94, in <module>
+    test_brain_bridge()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\baoph\Documents\Veraguard\test_b
+rain_bridge.py", line 28, in test_brain_bridge
+    c.execute("""
+    ~~~~~~~~~^^^^
+        INSERT INTO audit_reports (report_id, rep
+ort_hash, address, data, vera_score, timestamp, s
+ynapse_synced)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
+    ...<8 lines>...
+        0 # Not synced yet
+        ^^^^^^^^^^^^^^^^^^
+    ))
+    ^^
+sqlite3.OperationalError: no such table: audit_re
+ports

@@ -59,9 +59,10 @@ def init_db():
         """)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS scan_daily_counts (
-                user_id TEXT PRIMARY KEY,
-                date TEXT,
-                count INTEGER
+                user_id TEXT,
+                day_timestamp REAL,
+                scan_count INTEGER DEFAULT 0,
+                PRIMARY KEY (user_id, day_timestamp)
             )
         """)
         cursor.execute("""
@@ -102,7 +103,15 @@ def init_db():
                 ip_hash TEXT,
                 timestamp REAL
             )
-        """)        # [NEW] Founder Ledger (Settlements & Carry)
+        """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS daily_metrics (
+                day_timestamp REAL PRIMARY KEY,
+                volume_eth REAL DEFAULT 0,
+                tx_count INTEGER DEFAULT 0
+            )
+        """)
+        # [NEW] Founder Ledger (Settlements & Carry)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS founder_ledger (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,

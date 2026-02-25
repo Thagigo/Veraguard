@@ -127,3 +127,9 @@
     -   **Intelligence Grounding**: Implemented `/api/health` polling to explicitly verify NotebookLM cloud `NOTEBOOK_ID` connectivity, securely determining 'GROUNDED' status.
     -   **Environment Safeguards**: Added an `ENV_MODE` check in `.env` and a persistent `🔬 LAB MODE` UI watermark when running outside of production.
     -   **Bug Fixes**: Resolved the `[Invalid Date]` formatting crash in `WallOfShame.tsx` and fixed `ACCESS DENIED` health check polling.
+
+- **2026-02-25**: **System Expansions (Phase 5: Sovereign Cabinet)**:
+    -   **The Revenue Layer (The Rainmaker)**: Implemented `core/revenue_share.py`. Added 'Claim Bounty' functionality granting auditors a 10% credit kickback for shared 'Busts'.
+    -   **High-Fidelity Feedback (The UI God)**: Integrated 'Neural Load' progress bar and 'Reasoning Trace' background animations in `DashboardHome.tsx`.
+    -   **Adversarial Hardening (The Skeptic)**: Hardened `core/audit_logic.py` regex to detect hidden proxies (UUPS, EIP-1967, delegatecall) disguised with safe keywords. Created `test_adversarial.py` to verify detection loop.
+    -   **Public Signal (Vera-Verify)**: Created `core/x_agent.py` to auto-draft priority X (Twitter) alerts for 100% "Grounded Matches". Verified via `test_bounty_to_post.py` end-to-end test suite.

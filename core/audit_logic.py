@@ -67,6 +67,8 @@ def perform_triage_scan(bytecode: str) -> dict:
     # --- HEURISTIC PROXY DETECTION ---
     if re.search(r'f4|360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc', bytecode):
             is_proxy = True
+            warnings.append("DETECTED: Hidden Proxy logic or DelegateCall")
+            vera_score -= 80
 
     # --- 2. TRIAGE TIER (Gemini 3 Flash) ---
     triage_result = triage.scan(bytecode)

@@ -109,6 +109,7 @@ export default function DashboardHome({ userId, onLogout }: DashboardHomeProps) 
     const [reportHash, setReportHash] = useState<string | undefined>(undefined);
     const [auditCost, setAuditCost] = useState<number>(3.00); // [NEW] Track Cost for Ledger
     const [creditSource, setCreditSource] = useState<string>('purchase'); // [NEW] Credit Source
+    const [bountyLink, setBountyLink] = useState<string | null>(null); // [NEW] Claim Bounty Link
 
     // Membership & Referral State
     const [isMember, setIsMember] = useState(false);
@@ -521,6 +522,7 @@ export default function DashboardHome({ userId, onLogout }: DashboardHomeProps) 
         setRedTeamLog([]);
         setReportHash(undefined);
         setInitialDetection(null);  // [NEW] Clear history on new scan
+        setBountyLink(null); // [NEW] Clear Bounty Link on new scan
         setShowDeepDiveModal(false);
 
         try {
@@ -573,6 +575,7 @@ export default function DashboardHome({ userId, onLogout }: DashboardHomeProps) 
                 setVitals(data.vitals)
                 setRedTeamLog(data.red_team_log || [])
                 setReportHash(data.report_hash)
+                if (data.bounty_link) setBountyLink(data.bounty_link)
                 // [NEW] History of Suspicion — set if backend returned initial_detection
                 if (data.initial_detection) setInitialDetection(data.initial_detection);
                 // [NEW] Set Cost for Ledger (Default to standard/deep pricing if logic missing)
@@ -653,7 +656,7 @@ export default function DashboardHome({ userId, onLogout }: DashboardHomeProps) 
             {showPreFlight && pendingPurchase && feeQuote && (
                 <PreFlightPreview
                     amount={pendingPurchase.isSubscription ? 50 : pendingPurchase.amount}
-                    costEth={pendingPurchase.isSubscription ? (feeQuote.subscription_amount || 0.05) : (pendingPurchase.amount * feeQuote.amount)}
+                    costEth={pendingPurchase.isSubscription ? (feeQuote.subscription_amount || 0.05) : (pendingPurchase.amount * (feeQuote.amount || 0.001))}
                     onConfirm={executePayment}
                     onCancel={() => setShowPreFlight(false)}
                 />
@@ -996,7 +999,26 @@ export default function DashboardHome({ userId, onLogout }: DashboardHomeProps) 
                                                     className="relative"
                                                 >
                                                     {analyzing ? (
-                                                        <CrystallizationLoader tier={analysisTier} />
+                                                        <div className="relative">
+                                                            {/* Neural Load Progress Bar  */}
+                                                            <div className="w-full bg-slate-800 rounded-full h-1.5 mb-14 overflow-hidden relative border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+                                                                <div className="bg-emerald-500 h-1.5 animate-pulse w-full max-w-[80%] float-left origin-left transition-transform shadow-[0_0_10px_rgba(16,185,129,0.8)]"></div>
+                                                            </div>
+                                                            <div className="absolute top-3 left-0 w-full flex justify-center mt-1">
+                                                                <span className="text-[10px] bg-slate-900 border border-emerald-500/30 px-2 py-0.5 rounded font-mono text-emerald-400 font-bold tracking-[0.2em] shadow-[0_0_10px_rgba(16,185,129,0.4)]">NEURAL LOAD: OPTIMAL</span>
+                                                            </div>
+
+                                                            {/* Background Flickering Traces */}
+                                                            <div className="fixed inset-0 pointer-events-none z-[-1] flex flex-wrap content-start items-start gap-x-4 gap-y-1 text-[8px] font-mono text-emerald-500/20 overflow-hidden" style={{ maskImage: "radial-gradient(ellipse at center, transparent 15%, black 85%)" }}>
+                                                                {Array(200).fill(0).map((_, i) => (
+                                                                    <div key={i} className={`whitespace-nowrap ${i % 3 === 0 ? 'animate-pulse' : ''} ${i % 4 === 0 ? 'hidden md:block' : ''}`}>
+                                                                        [TRACE] PC_{(i * 14).toString(16).padStart(4, '0').toUpperCase()}: {i % 2 === 0 ? 'JUMPI' : 'SLOAD'} -&gt; MEM[{Math.floor(Math.random() * 256)}]
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+
+                                                            <CrystallizationLoader tier={analysisTier} />
+                                                        </div>
                                                     ) : (
                                                         <>
                                                             <div className="flex gap-4">
@@ -1093,6 +1115,7 @@ export default function DashboardHome({ userId, onLogout }: DashboardHomeProps) 
                                             cost={auditCost} // [NEW]
                                             creditSource={creditSource} // [NEW]
                                             initialDetection={initialDetection ?? undefined}  // [NEW] History of Suspicion
+                                            bountyLink={bountyLink ?? undefined} // [NEW] The Rainmaker Bounty Link
                                         />
 
                                         <div className="flex justify-center mt-8 mb-12">

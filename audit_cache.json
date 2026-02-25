@@ -98,5 +98,810 @@
                 }
             ]
         }
+    },
+    "f8ac7e84d5595ff09312c8d17c96e08f0c9a700af8f705bb36cc5b8db7b3b09e": {
+        "timestamp": 1772062470.1959698,
+        "result": {
+            "report_id": "aea675d3-c610-4aca-9848-0b9e2c7d9437",
+            "report_hash": "7a95fb7550a82e65bb4153e6b27cecac8faa2f4e2370343b6bbc074492722ce9",
+            "timestamp": "1772062470.194134",
+            "vera_score": 60,
+            "warnings": [
+                "DETECTED: Legacy Math Overflow"
+            ],
+            "note": "Triage Analysis Complete | Hunter Deep Analysis Triggered",
+            "milestones": [
+                {
+                    "step": "Bytecode Extraction",
+                    "status": "complete",
+                    "details": "Fetched from Chain"
+                },
+                {
+                    "step": "Decompilation",
+                    "status": "complete",
+                    "details": "AST Generated"
+                },
+                {
+                    "step": "Signature Check",
+                    "status": "complete",
+                    "details": "Checked 3/3 Critical Patterns"
+                },
+                {
+                    "step": "Heuristic Scan",
+                    "status": "complete",
+                    "details": "VeraGuard Knowledge Base"
+                },
+                {
+                    "step": "Deep Hunter Analysis",
+                    "status": "complete",
+                    "details": "Gemini 3 Pro Simulation"
+                }
+            ],
+            "risk_summary": "CAUTION: Heuristics indicate potential control centralization.",
+            "vitals": {
+                "liquidity": "HIGH (>$500k)",
+                "owner_risk": "ACTIVE ADMIN",
+                "upgradeability": "IMMUTABLE"
+            },
+            "is_proxy": false,
+            "scan_type": "deep",
+            "red_team_log": [
+                {
+                    "vector": "Flash Loan Attack",
+                    "status": "Attempted",
+                    "verdict": "RESILIENT",
+                    "details": "Simulating Liquidity Drain... [RESILIENT]"
+                },
+                {
+                    "vector": "Reentrancy",
+                    "status": "Attempted",
+                    "verdict": "RESILIENT",
+                    "details": "Attempting Recursive Call... [RESILIENT]"
+                },
+                {
+                    "vector": "Ownership Override",
+                    "status": "Attempted",
+                    "verdict": "RESILIENT",
+                    "details": "Bypassing Admin Logic... [RESILIENT]"
+                }
+            ],
+            "certificate": {
+                "certificate_id": "Certificate_aea675d3-c610-4aca-9848-0b9e2c7d9437.json",
+                "path": "NotebookLM\\The_Vault\\Certificate_aea675d3-c610-4aca-9848-0b9e2c7d9437.json",
+                "anchor_tx": "0xda08564f865c27763691ffdd40ba73e494ccca6c68326a54742d82d6d74c2abe"
+            }
+        }
+    },
+    "711f71f58afb1b0ab077d020d0df6be52064ebfb244ab2bfbeac4dedc1c209a7": {
+        "timestamp": 1772062470.200229,
+        "result": {
+            "report_id": "416f4fc8-6d9b-4246-b5c8-ad4143900f5d",
+            "report_hash": "fe44fd27d60f02c3cc6f457a5bcaf6d3b722b9001bad7f42cfa2b6d4c937277a",
+            "timestamp": "1772062470.1983933",
+            "vera_score": 60,
+            "warnings": [
+                "DETECTED: Legacy Math Overflow"
+            ],
+            "note": "Triage Analysis Complete | Hunter Deep Analysis Triggered",
+            "milestones": [
+                {
+                    "step": "Bytecode Extraction",
+                    "status": "complete",
+                    "details": "Fetched from Chain"
+                },
+                {
+                    "step": "Decompilation",
+                    "status": "complete",
+                    "details": "AST Generated"
+                },
+                {
+                    "step": "Signature Check",
+                    "status": "complete",
+                    "details": "Checked 3/3 Critical Patterns"
+                },
+                {
+                    "step": "Heuristic Scan",
+                    "status": "complete",
+                    "details": "VeraGuard Knowledge Base"
+                },
+                {
+                    "step": "Deep Hunter Analysis",
+                    "status": "complete",
+                    "details": "Gemini 3 Pro Simulation"
+                }
+            ],
+            "risk_summary": "CAUTION: Heuristics indicate potential control centralization.",
+            "vitals": {
+                "liquidity": "HIGH (>$500k)",
+                "owner_risk": "ACTIVE ADMIN",
+                "upgradeability": "IMMUTABLE"
+            },
+            "is_proxy": false,
+            "scan_type": "deep",
+            "red_team_log": [
+                {
+                    "vector": "Flash Loan Attack",
+                    "status": "Attempted",
+                    "verdict": "RESILIENT",
+                    "details": "Simulating Liquidity Drain... [RESILIENT]"
+                },
+                {
+                    "vector": "Reentrancy",
+                    "status": "Attempted",
+                    "verdict": "RESILIENT",
+                    "details": "Attempting Recursive Call... [RESILIENT]"
+                },
+                {
+                    "vector": "Ownership Override",
+                    "status": "Attempted",
+                    "verdict": "RESILIENT",
+                    "details": "Bypassing Admin Logic... [RESILIENT]"
+                }
+            ],
+            "certificate": {
+                "certificate_id": "Certificate_416f4fc8-6d9b-4246-b5c8-ad4143900f5d.json",
+                "path": "NotebookLM\\The_Vault\\Certificate_416f4fc8-6d9b-4246-b5c8-ad4143900f5d.json",
+                "anchor_tx": "0x1c8b9d25a15eb085c8eea5fe2c48d6ecd7062ea1aaafdd0313c672ba0bab7c37"
+            }
+        }
+    },
+    "6a0df24aea013ed023b943225e83399725109d1ae9ae976d84158e5ba588b356": {
+        "timestamp": 1772062470.2049613,
+        "result": {
+            "report_id": "378e2a3e-62d5-4a13-aabd-a4ead4416dcd",
+            "report_hash": "e4f6ce610c7b6f3f2c94cf919164a7465e83dd1f5f35c1100c8edb5aec842b77",
+            "timestamp": "1772062470.203411",
+            "vera_score": 60,
+            "warnings": [
+                "DETECTED: Legacy Math Overflow"
+            ],
+            "note": "Triage Analysis Complete | Hunter Deep Analysis Triggered",
+            "milestones": [
+                {
+                    "step": "Bytecode Extraction",
+                    "status": "complete",
+                    "details": "Fetched from Chain"
+                },
+                {
+                    "step": "Decompilation",
+                    "status": "complete",
+                    "details": "AST Generated"
+                },
+                {
+                    "step": "Signature Check",
+                    "status": "complete",
+                    "details": "Checked 3/3 Critical Patterns"
+                },
+                {
+                    "step": "Heuristic Scan",
+                    "status": "complete",
+                    "details": "VeraGuard Knowledge Base"
+                },
+                {
+                    "step": "Deep Hunter Analysis",
+                    "status": "complete",
+                    "details": "Gemini 3 Pro Simulation"
+                }
+            ],
+            "risk_summary": "WARNING: Code contains unsafe patterns or centralization risks.",
+            "vitals": {
+                "liquidity": "HIGH (>$500k)",
+                "owner_risk": "ACTIVE ADMIN",
+                "upgradeability": "IMMUTABLE"
+            },
+            "is_proxy": false,
+            "scan_type": "deep",
+            "red_team_log": [
+                {
+                    "vector": "Flash Loan Attack",
+                    "status": "Attempted",
+                    "verdict": "RESILIENT",
+                    "details": "Simulating Liquidity Drain... [RESILIENT]"
+                },
+                {
+                    "vector": "Reentrancy",
+                    "status": "Attempted",
+                    "verdict": "RESILIENT",
+                    "details": "Attempting Recursive Call... [RESILIENT]"
+                },
+                {
+                    "vector": "Ownership Override",
+                    "status": "Attempted",
+                    "verdict": "RESILIENT",
+                    "details": "Bypassing Admin Logic... [RESILIENT]"
+                }
+            ],
+            "certificate": {
+                "certificate_id": "Certificate_378e2a3e-62d5-4a13-aabd-a4ead4416dcd.json",
+                "path": "NotebookLM\\The_Vault\\Certificate_378e2a3e-62d5-4a13-aabd-a4ead4416dcd.json",
+                "anchor_tx": "0xe3562f30c22cffdd2d502131f113d79397cd63ecfbe7ab9690c4f64b73a4f320"
+            }
+        }
+    },
+    "c25c5308f631dbe5773286caa2c8b95691ccaa20c946addab59c3c67eec321a3": {
+        "timestamp": 1772062470.2099674,
+        "result": {
+            "report_id": "0778c8f4-b62b-4a31-8ff9-15165f555f77",
+            "report_hash": "ff8a6b14458f4b76c06d69afb147e2951ce6ab3ddf3cb74bf1e71dd98e84f16d",
+            "timestamp": "1772062470.207766",
+            "vera_score": 60,
+            "warnings": [
+                "DETECTED: Legacy Math Overflow"
+            ],
+            "note": "Triage Analysis Complete | Hunter Deep Analysis Triggered",
+            "milestones": [
+                {
+                    "step": "Bytecode Extraction",
+                    "status": "complete",
+                    "details": "Fetched from Chain"
+                },
+                {
+                    "step": "Decompilation",
+                    "status": "complete",
+                    "details": "AST Generated"
+                },
+                {
+                    "step": "Signature Check",
+                    "status": "complete",
+                    "details": "Checked 3/3 Critical Patterns"
+                },
+                {
+                    "step": "Heuristic Scan",
+                    "status": "complete",
+                    "details": "VeraGuard Knowledge Base"
+                },
+                {
+                    "step": "Deep Hunter Analysis",
+                    "status": "complete",
+                    "details": "Gemini 3 Pro Simulation"
+                }
+            ],
+            "risk_summary": "CAUTION: Heuristics indicate potential control centralization.",
+            "vitals": {
+                "liquidity": "HIGH (>$500k)",
+                "owner_risk": "ACTIVE ADMIN",
+                "upgradeability": "IMMUTABLE"
+            },
+            "is_proxy": false,
+            "scan_type": "deep",
+            "red_team_log": [
+                {
+                    "vector": "Flash Loan Attack",
+                    "status": "Attempted",
+                    "verdict": "RESILIENT",
+                    "details": "Simulating Liquidity Drain... [RESILIENT]"
+                },
+                {
+                    "vector": "Reentrancy",
+                    "status": "Attempted",
+                    "verdict": "RESILIENT",
+                    "details": "Attempting Recursive Call... [RESILIENT]"
+                },
+                {
+                    "vector": "Ownership Override",
+                    "status": "Attempted",
+                    "verdict": "RESILIENT",
+                    "details": "Bypassing Admin Logic... [RESILIENT]"
+                }
+            ],
+            "certificate": {
+                "certificate_id": "Certificate_0778c8f4-b62b-4a31-8ff9-15165f555f77.json",
+                "path": "NotebookLM\\The_Vault\\Certificate_0778c8f4-b62b-4a31-8ff9-15165f555f77.json",
+                "anchor_tx": "0xa854ad3f73dd943ac2e59f66384acf7035489086f9f7863c0d23d8f45e07c568"
+            }
+        }
+    },
+    "fbb8d141173c68026d05a8d57e9070c71f11782888a8756b8397aa3954204777": {
+        "timestamp": 1772062470.2144778,
+        "result": {
+            "report_id": "feda061e-abd1-4dbc-8c7d-477b01d064a4",
+            "report_hash": "b943f9ad6584480c220d0de3e0ebd68e667f56b3deee0b976180e72b3359591a",
+            "timestamp": "1772062470.212747",
+            "vera_score": 60,
+            "warnings": [
+                "DETECTED: Legacy Math Overflow"
+            ],
+            "note": "Triage Analysis Complete | Hunter Deep Analysis Triggered",
+            "milestones": [
+                {
+                    "step": "Bytecode Extraction",
+                    "status": "complete",
+                    "details": "Fetched from Chain"
+                },
+                {
+                    "step": "Decompilation",
+                    "status": "complete",
+                    "details": "AST Generated"
+                },
+                {
+                    "step": "Signature Check",
+                    "status": "complete",
+                    "details": "Checked 3/3 Critical Patterns"
+                },
+                {
+                    "step": "Heuristic Scan",
+                    "status": "complete",
+                    "details": "VeraGuard Knowledge Base"
+                },
+                {
+                    "step": "Deep Hunter Analysis",
+                    "status": "complete",
+                    "details": "Gemini 3 Pro Simulation"
+                }
+            ],
+            "risk_summary": "CAUTION: Heuristics indicate potential control centralization.",
+            "vitals": {
+                "liquidity": "HIGH (>$500k)",
+                "owner_risk": "ACTIVE ADMIN",
+                "upgradeability": "IMMUTABLE"
+            },
+            "is_proxy": false,
+            "scan_type": "deep",
+            "red_team_log": [
+                {
+                    "vector": "Flash Loan Attack",
+                    "status": "Attempted",
+                    "verdict": "RESILIENT",
+                    "details": "Simulating Liquidity Drain... [RESILIENT]"
+                },
+                {
+                    "vector": "Reentrancy",
+                    "status": "Attempted",
+                    "verdict": "RESILIENT",
+                    "details": "Attempting Recursive Call... [RESILIENT]"
+                },
+                {
+                    "vector": "Ownership Override",
+                    "status": "Attempted",
+                    "verdict": "RESILIENT",
+                    "details": "Bypassing Admin Logic... [RESILIENT]"
+                }
+            ],
+            "certificate": {
+                "certificate_id": "Certificate_feda061e-abd1-4dbc-8c7d-477b01d064a4.json",
+                "path": "NotebookLM\\The_Vault\\Certificate_feda061e-abd1-4dbc-8c7d-477b01d064a4.json",
+                "anchor_tx": "0x7336e5da09804ba25144b5bc9a9c7aa7484641cec446f7358bfbf201c713fb85"
+            }
+        }
+    },
+    "ae5be46cc139f333358205af23afc1141e906b8322233f568e3b8fa4ddd31f99": {
+        "timestamp": 1772062526.0574436,
+        "result": {
+            "report_id": "203d0bf1-4e19-438b-9172-9fb9eb68975a",
+            "report_hash": "43c44368e6812ec8b2460e12fd51a3df962f6a50fbc720af7bcfb10c5697b528",
+            "timestamp": "1772062526.0555274",
+            "vera_score": 0,
+            "warnings": [
+                "DETECTED: Ghost Mint (Signature A)",
+                "DETECTED: Legacy Math Overflow"
+            ],
+            "note": "Triage Analysis Complete | Hunter Deep Analysis Triggered",
+            "milestones": [
+                {
+                    "step": "Bytecode Extraction",
+                    "status": "complete",
+                    "details": "Fetched from Chain"
+                },
+                {
+                    "step": "Decompilation",
+                    "status": "complete",
+                    "details": "AST Generated"
+                },
+                {
+                    "step": "Signature Check",
+                    "status": "complete",
+                    "details": "Checked 3/3 Critical Patterns"
+                },
+                {
+                    "step": "Heuristic Scan",
+                    "status": "complete",
+                    "details": "VeraGuard Knowledge Base"
+                },
+                {
+                    "step": "Deep Hunter Analysis",
+                    "status": "complete",
+                    "details": "Gemini 3 Pro Simulation"
+                }
+            ],
+            "risk_summary": "CRITICAL: High probability of capital loss due to active malicious signatures.",
+            "vitals": {
+                "liquidity": "LOW (<$5k)",
+                "owner_risk": "ACTIVE ADMIN",
+                "upgradeability": "IMMUTABLE"
+            },
+            "is_proxy": false,
+            "scan_type": "deep",
+            "red_team_log": [
+                {
+                    "vector": "Flash Loan Attack",
+                    "status": "Attempted",
+                    "verdict": "RESILIENT",
+                    "details": "Simulating Liquidity Drain... [RESILIENT]"
+                },
+                {
+                    "vector": "Reentrancy",
+                    "status": "Attempted",
+                    "verdict": "RESILIENT",
+                    "details": "Attempting Recursive Call... [RESILIENT]"
+                },
+                {
+                    "vector": "Ownership Override",
+                    "status": "Attempted",
+                    "verdict": "RESILIENT",
+                    "details": "Bypassing Admin Logic... [RESILIENT]"
+                }
+            ],
+            "certificate": {
+                "certificate_id": "Certificate_203d0bf1-4e19-438b-9172-9fb9eb68975a.json",
+                "path": "NotebookLM\\The_Vault\\Certificate_203d0bf1-4e19-438b-9172-9fb9eb68975a.json",
+                "anchor_tx": "0x471fb17bbe9179e8106e0aeff7ead3ca39c611d893db3aac0c450c6a7b9427f9"
+            }
+        }
+    },
+    "804b88e2b8334d1ae978e8dcac416c6ea0ec3221c52230ce00347ee347afd733": {
+        "timestamp": 1772062526.0630832,
+        "result": {
+            "report_id": "be717be9-5d7d-4ab5-ae89-03b1057ab709",
+            "report_hash": "ce9ef1a9ededb3cba1e39fd2c04b1781a82278c48afad29a416c22fde6cd2379",
+            "timestamp": "1772062526.0611145",
+            "vera_score": 60,
+            "warnings": [
+                "DETECTED: Legacy Math Overflow"
+            ],
+            "note": "Triage Analysis Complete | Hunter Deep Analysis Triggered",
+            "milestones": [
+                {
+                    "step": "Bytecode Extraction",
+                    "status": "complete",
+                    "details": "Fetched from Chain"
+                },
+                {
+                    "step": "Decompilation",
+                    "status": "complete",
+                    "details": "AST Generated"
+                },
+                {
+                    "step": "Signature Check",
+                    "status": "complete",
+                    "details": "Checked 3/3 Critical Patterns"
+                },
+                {
+                    "step": "Heuristic Scan",
+                    "status": "complete",
+                    "details": "VeraGuard Knowledge Base"
+                },
+                {
+                    "step": "Deep Hunter Analysis",
+                    "status": "complete",
+                    "details": "Gemini 3 Pro Simulation"
+                }
+            ],
+            "risk_summary": "CAUTION: Heuristics indicate potential control centralization.",
+            "vitals": {
+                "liquidity": "HIGH (>$500k)",
+                "owner_risk": "ACTIVE ADMIN",
+                "upgradeability": "IMMUTABLE"
+            },
+            "is_proxy": false,
+            "scan_type": "deep",
+            "red_team_log": [
+                {
+                    "vector": "Flash Loan Attack",
+                    "status": "Attempted",
+                    "verdict": "RESILIENT",
+                    "details": "Simulating Liquidity Drain... [RESILIENT]"
+                },
+                {
+                    "vector": "Reentrancy",
+                    "status": "Attempted",
+                    "verdict": "RESILIENT",
+                    "details": "Attempting Recursive Call... [RESILIENT]"
+                },
+                {
+                    "vector": "Ownership Override",
+                    "status": "Attempted",
+                    "verdict": "RESILIENT",
+                    "details": "Bypassing Admin Logic... [RESILIENT]"
+                }
+            ],
+            "certificate": {
+                "certificate_id": "Certificate_be717be9-5d7d-4ab5-ae89-03b1057ab709.json",
+                "path": "NotebookLM\\The_Vault\\Certificate_be717be9-5d7d-4ab5-ae89-03b1057ab709.json",
+                "anchor_tx": "0x4503c4e9f085f174a25773ab3b4a4c9c2bc17ab5fa5b9ef5a71a391c35031bb7"
+            }
+        }
+    },
+    "89d334cd97acc9512b10e86a6ebd098663c2f7a44b44a2d4afec71d799c0c3cb": {
+        "timestamp": 1772062526.0707622,
+        "result": {
+            "report_id": "625ac44c-7ade-49ba-ba8a-12c96edbb5cb",
+            "report_hash": "fe6ac8ba4abe28bc2cf437c4a0a2d81f61345074b7d4be3087ba5071144670d1",
+            "timestamp": "1772062526.0679374",
+            "vera_score": 60,
+            "warnings": [
+                "DETECTED: Legacy Math Overflow"
+            ],
+            "note": "Triage Analysis Complete | Hunter Deep Analysis Triggered",
+            "milestones": [
+                {
+                    "step": "Bytecode Extraction",
+                    "status": "complete",
+                    "details": "Fetched from Chain"
+                },
+                {
+                    "step": "Decompilation",
+                    "status": "complete",
+                    "details": "AST Generated"
+                },
+                {
+                    "step": "Signature Check",
+                    "status": "complete",
+                    "details": "Checked 3/3 Critical Patterns"
+                },
+                {
+                    "step": "Heuristic Scan",
+                    "status": "complete",
+                    "details": "VeraGuard Knowledge Base"
+                },
+                {
+                    "step": "Deep Hunter Analysis",
+                    "status": "complete",
+                    "details": "Gemini 3 Pro Simulation"
+                }
+            ],
+            "risk_summary": "WARNING: Code contains unsafe patterns or centralization risks.",
+            "vitals": {
+                "liquidity": "HIGH (>$500k)",
+                "owner_risk": "ACTIVE ADMIN",
+                "upgradeability": "DETECTED"
+            },
+            "is_proxy": true,
+            "scan_type": "deep",
+            "red_team_log": [
+                {
+                    "vector": "Flash Loan Attack",
+                    "status": "Attempted",
+                    "verdict": "RESILIENT",
+                    "details": "Simulating Liquidity Drain... [RESILIENT]"
+                },
+                {
+                    "vector": "Reentrancy",
+                    "status": "Attempted",
+                    "verdict": "RESILIENT",
+                    "details": "Attempting Recursive Call... [RESILIENT]"
+                },
+                {
+                    "vector": "Ownership Override",
+                    "status": "Attempted",
+                    "verdict": "RESILIENT",
+                    "details": "Bypassing Admin Logic... [RESILIENT]"
+                }
+            ],
+            "certificate": {
+                "certificate_id": "Certificate_625ac44c-7ade-49ba-ba8a-12c96edbb5cb.json",
+                "path": "NotebookLM\\The_Vault\\Certificate_625ac44c-7ade-49ba-ba8a-12c96edbb5cb.json",
+                "anchor_tx": "0x927e2855313828bda95f1fbe61341118cf91e427447ee03e1854465e8d1fa042"
+            }
+        }
+    },
+    "4d10c4bf2e98d0509a426dcd31ddcd831ab3be5360a26ac9d4549d127f61208f": {
+        "timestamp": 1772062526.0775523,
+        "result": {
+            "report_id": "34713b00-3e4c-47e2-836f-2169c6e8dd39",
+            "report_hash": "f45fe569a7abbe9964f4834f99bbee6a6b34c8597c59d04ed60e3c39cff108d5",
+            "timestamp": "1772062526.075945",
+            "vera_score": 60,
+            "warnings": [
+                "DETECTED: Legacy Math Overflow"
+            ],
+            "note": "Triage Analysis Complete | Hunter Deep Analysis Triggered",
+            "milestones": [
+                {
+                    "step": "Bytecode Extraction",
+                    "status": "complete",
+                    "details": "Fetched from Chain"
+                },
+                {
+                    "step": "Decompilation",
+                    "status": "complete",
+                    "details": "AST Generated"
+                },
+                {
+                    "step": "Signature Check",
+                    "status": "complete",
+                    "details": "Checked 3/3 Critical Patterns"
+                },
+                {
+                    "step": "Heuristic Scan",
+                    "status": "complete",
+                    "details": "VeraGuard Knowledge Base"
+                },
+                {
+                    "step": "Deep Hunter Analysis",
+                    "status": "complete",
+                    "details": "Gemini 3 Pro Simulation"
+                }
+            ],
+            "risk_summary": "NOTICE: Codebase contains centralized functions. Owner risk present.",
+            "vitals": {
+                "liquidity": "HIGH (>$500k)",
+                "owner_risk": "ACTIVE ADMIN",
+                "upgradeability": "DETECTED"
+            },
+            "is_proxy": true,
+            "scan_type": "deep",
+            "red_team_log": [
+                {
+                    "vector": "Flash Loan Attack",
+                    "status": "Attempted",
+                    "verdict": "RESILIENT",
+                    "details": "Simulating Liquidity Drain... [RESILIENT]"
+                },
+                {
+                    "vector": "Reentrancy",
+                    "status": "Attempted",
+                    "verdict": "RESILIENT",
+                    "details": "Attempting Recursive Call... [RESILIENT]"
+                },
+                {
+                    "vector": "Ownership Override",
+                    "status": "Attempted",
+                    "verdict": "RESILIENT",
+                    "details": "Bypassing Admin Logic... [RESILIENT]"
+                }
+            ],
+            "certificate": {
+                "certificate_id": "Certificate_34713b00-3e4c-47e2-836f-2169c6e8dd39.json",
+                "path": "NotebookLM\\The_Vault\\Certificate_34713b00-3e4c-47e2-836f-2169c6e8dd39.json",
+                "anchor_tx": "0x1200ec58d05466a50478b7731003203f196581b16d81236244622b5e3841a367"
+            }
+        }
+    },
+    "c7b3139b38a17b1676ad70b35e2fe359893d87d7cbf2476d74ad466b785feed8": {
+        "timestamp": 1772062526.083731,
+        "result": {
+            "report_id": "e4cd046c-1875-40f1-8ec4-8d8f5a41005b",
+            "report_hash": "413ebbcd11f709af21dd9771efe644add04bed98cf4759003e535cd9cb6a63fe",
+            "timestamp": "1772062526.0814514",
+            "vera_score": 60,
+            "warnings": [
+                "DETECTED: Legacy Math Overflow"
+            ],
+            "note": "Triage Analysis Complete | Hunter Deep Analysis Triggered",
+            "milestones": [
+                {
+                    "step": "Bytecode Extraction",
+                    "status": "complete",
+                    "details": "Fetched from Chain"
+                },
+                {
+                    "step": "Decompilation",
+                    "status": "complete",
+                    "details": "AST Generated"
+                },
+                {
+                    "step": "Signature Check",
+                    "status": "complete",
+                    "details": "Checked 3/3 Critical Patterns"
+                },
+                {
+                    "step": "Heuristic Scan",
+                    "status": "complete",
+                    "details": "VeraGuard Knowledge Base"
+                },
+                {
+                    "step": "Deep Hunter Analysis",
+                    "status": "complete",
+                    "details": "Gemini 3 Pro Simulation"
+                }
+            ],
+            "risk_summary": "CAUTION: Heuristics indicate potential control centralization.",
+            "vitals": {
+                "liquidity": "HIGH (>$500k)",
+                "owner_risk": "ACTIVE ADMIN",
+                "upgradeability": "IMMUTABLE"
+            },
+            "is_proxy": false,
+            "scan_type": "deep",
+            "red_team_log": [
+                {
+                    "vector": "Flash Loan Attack",
+                    "status": "Attempted",
+                    "verdict": "RESILIENT",
+                    "details": "Simulating Liquidity Drain... [RESILIENT]"
+                },
+                {
+                    "vector": "Reentrancy",
+                    "status": "Attempted",
+                    "verdict": "RESILIENT",
+                    "details": "Attempting Recursive Call... [RESILIENT]"
+                },
+                {
+                    "vector": "Ownership Override",
+                    "status": "Attempted",
+                    "verdict": "RESILIENT",
+                    "details": "Bypassing Admin Logic... [RESILIENT]"
+                }
+            ],
+            "certificate": {
+                "certificate_id": "Certificate_e4cd046c-1875-40f1-8ec4-8d8f5a41005b.json",
+                "path": "NotebookLM\\The_Vault\\Certificate_e4cd046c-1875-40f1-8ec4-8d8f5a41005b.json",
+                "anchor_tx": "0xa9f241b6a0ee05a61fb58c71aef8b319f5877bc0864dc38131e90a2dd915b665"
+            }
+        }
+    },
+    "89adf4d23003ca1f1fa28a1f607a155b20e74bdd9b5ff0a98a22aba804417528": {
+        "timestamp": 1772062591.906165,
+        "result": {
+            "report_id": "9f84dd07-42e3-4249-aee3-28e23db62849",
+            "report_hash": "699b24b7989ae7a72202a33ed26eff616bfa735bb830a690bd06836e1e965e33",
+            "timestamp": "1772062591.903747",
+            "vera_score": 0,
+            "warnings": [
+                "DETECTED: UUPS Silent Death (Signature B)",
+                "DETECTED: Legacy Math Overflow"
+            ],
+            "note": "Triage Analysis Complete | Hunter Deep Analysis Triggered",
+            "milestones": [
+                {
+                    "step": "Bytecode Extraction",
+                    "status": "complete",
+                    "details": "Fetched from Chain"
+                },
+                {
+                    "step": "Decompilation",
+                    "status": "complete",
+                    "details": "AST Generated"
+                },
+                {
+                    "step": "Signature Check",
+                    "status": "complete",
+                    "details": "Checked 3/3 Critical Patterns"
+                },
+                {
+                    "step": "Heuristic Scan",
+                    "status": "complete",
+                    "details": "VeraGuard Knowledge Base"
+                },
+                {
+                    "step": "Deep Hunter Analysis",
+                    "status": "complete",
+                    "details": "Gemini 3 Pro Simulation"
+                }
+            ],
+            "risk_summary": "CRITICAL: High probability of capital loss due to active malicious signatures.",
+            "vitals": {
+                "liquidity": "LOW (<$5k)",
+                "owner_risk": "ACTIVE ADMIN",
+                "upgradeability": "IMMUTABLE"
+            },
+            "is_proxy": false,
+            "scan_type": "deep",
+            "red_team_log": [
+                {
+                    "vector": "Flash Loan Attack",
+                    "status": "Attempted",
+                    "verdict": "RESILIENT",
+                    "details": "Simulating Liquidity Drain... [RESILIENT]"
+                },
+                {
+                    "vector": "Reentrancy",
+                    "status": "Attempted",
+                    "verdict": "RESILIENT",
+                    "details": "Attempting Recursive Call... [RESILIENT]"
+                },
+                {
+                    "vector": "Ownership Override",
+                    "status": "Attempted",
+                    "verdict": "RESILIENT",
+                    "details": "Bypassing Admin Logic... [RESILIENT]"
+                }
+            ],
+            "certificate": {
+                "certificate_id": "Certificate_9f84dd07-42e3-4249-aee3-28e23db62849.json",
+                "path": "NotebookLM\\The_Vault\\Certificate_9f84dd07-42e3-4249-aee3-28e23db62849.json",
+                "anchor_tx": "0x458fca38881f137fc1706f84e2234b429b91f09b9fa22a424c5f15b331a0d080"
+            }
+        }
     }
 }

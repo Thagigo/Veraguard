@@ -12,7 +12,7 @@ import logging
 from sse_starlette.sse import EventSourceResponse
 
 # Core Modules
-from core import database, payment_handler, payment_gate, auth, scout, brain_sync, red_team, brain_monitor
+from core import database, payment_handler, payment_gate, auth, scout, brain_sync, red_team, brain_monitor, revenue_share
 # from .audit_logic import check_contract # Local import in endpoint to avoid circular issues if any
 
 app = FastAPI(title="VeraGuard Audit Engine")
@@ -86,6 +86,14 @@ class PaymentRequest(BaseModel):
 
 class ReferralCreateRequest(BaseModel):
     user_id: str
+
+class BountyGenerateRequest(BaseModel):
+    report_id: str
+    auditor_id: str
+
+class BountyClaimRequest(BaseModel):
+    bounty_id: str
+    claimer_id: str
 
 class AuditRequest(BaseModel):
     address: str
@@ -241,6 +249,18 @@ def get_referral_stats(user_id: str):
     
     return {"code": code, "uses": 0, "earned": 0}
 
+@app.post("/api/revenue/generate_bounty")
+def generate_bounty(req: BountyGenerateRequest):
+    bounty_id = revenue_share.generate_bounty_link(req.report_id, req.auditor_id)
+    return {"bounty_id": bounty_id}
+
+@app.post("/api/revenue/claim")
+def claim_bounty(req: BountyClaimRequest):
+    result = revenue_share.process_bounty_claim(req.bounty_id, req.claimer_id)
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error", "Claim failed"))
+    return result
+
 @app.get("/api/user/history/{user_id}")
 def get_user_history_endpoint(user_id: str):
     return database.get_user_history(user_id)
@@ -383,6 +403,21 @@ def audit_contract(request: AuditRequest):
              # [FIX] Save the MODIFIED result (with cost & badges) to DB, not the raw one.
              final_json = json.dumps(result)
              database.save_audit_report(result['report_id'], result['report_hash'], request.address, final_json, result.get('vera_score', 0), request.user_id)
+             
+             # [NEW] Generate Bounty Link logic (The Rainmaker Phase 5)
+             import core.revenue_share as revenue_share
+             bounty_id = revenue_share.generate_bounty_link(result['report_id'], request.user_id)
+             result['bounty_id'] = bounty_id
+             result['bounty_link'] = f"?claim={bounty_id}"
+        
+        # [NEW] Public Signal Logic (Vera-Verify Phase 5)
+        # Check if any ground truth warnings triggered a tweet draft
+        if 'warnings' in result and isinstance(result['warnings'], list):
+            import core.x_agent as x_agent
+            tweet_url = x_agent.check_and_draft(request.address, result['warnings'], "")
+            if tweet_url:
+                result['tweet_intent_url'] = tweet_url
+                print(f"[VERA-VERIFY] 100% Grounded Match. Drafted Tweet for {request.address}.")
         
         return result
     except Exception as e:

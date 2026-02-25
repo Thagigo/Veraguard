@@ -1,0 +1,14 @@
+{
+  "synapse_id": "neu_1772052418_052417",
+  "timestamp": "2026-02-25T21:46:58.568867",
+  "verdict": "BUST_CONFIRMED",
+  "vera_score": 10.0,
+  "target_contract": "0xTEST_9efac3c7",
+  "sheriff_notes": "Automated flagging of Unknown Vulnerability.",
+  "exploit_vector": "Unknown Vulnerability",
+  "technical_context": {
+    "report_hash": "TEST_HASH_123",
+    "raw_data_snippet": "{'exploit_vector': 'Neural Bridge Verification', 'notes': 'This is a test to verify the connection between VeraGuard and NotebookLM.'}"
+  },
+  "instruction_to_brain": "Analyze this exploit pattern. Update Heuristics/FAQ if novel."
+}

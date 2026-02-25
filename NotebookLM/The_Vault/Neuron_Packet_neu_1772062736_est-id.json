@@ -1,0 +1,14 @@
+{
+  "synapse_id": "neu_1772062736_est-id",
+  "timestamp": "2026-02-26T00:38:56.488780",
+  "verdict": "BUST_CONFIRMED",
+  "vera_score": 10.0,
+  "target_contract": "0xDeceptiveGhostMintContract",
+  "sheriff_notes": "Automated flagging of Unknown Vulnerability.",
+  "exploit_vector": "Unknown Vulnerability",
+  "technical_context": {
+    "report_hash": "0x12345abcdef",
+    "raw_data_snippet": "{'vera_score': 10, 'warnings': ['DETECTED: Ghost Mint (Signature A)', 'HIGH: Unverified Contract'], 'note': 'SIMULATION: Critical Vulnerability Found', 'report_id': 'simulated-test-id', 'report_hash': '0x12345abcdef', 'cost_deducted': 0, 'plan': 'Free Tier', 'credit_source': 'free_tier', 'badges': ['VERIFIED_DEEP_SCAN', 'PREMIUM_AUDIT']}"
+  },
+  "instruction_to_brain": "Analyze this exploit pattern. Update Heuristics/FAQ if novel."
+}

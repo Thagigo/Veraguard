@@ -40,9 +40,11 @@ interface Props {
     cost?: number;
     creditSource?: string;
     initialDetection?: InitialDetection;  // [NEW] History of Suspicion
+    // [NEW] The Rainmaker Bounty Link
+    bountyLink?: string;
 }
 
-const AuditReport: React.FC<Props> = ({ score, warnings, riskSummary, milestones, vitals, redTeamLog, reportHash, onClose, cost, creditSource, initialDetection }) => {
+const AuditReport: React.FC<Props> = ({ score, warnings, riskSummary, milestones, vitals, redTeamLog, reportHash, onClose, cost, creditSource, initialDetection, bountyLink }) => {
     const [showLedger, setShowLedger] = useState(false);
     const [expandedMilestone, setExpandedMilestone] = useState<number | null>(null);
 
@@ -111,6 +113,19 @@ const AuditReport: React.FC<Props> = ({ score, warnings, riskSummary, milestones
                             Download PDF
                         </button>
                     </div>
+
+                    {/* [NEW] The Rainmaker Bounty Link */}
+                    {bountyLink && (
+                        <div className="mt-6 p-4 bg-emerald-500/5 border border-emerald-500/30 rounded-xl text-center">
+                            <h4 className="text-emerald-400 font-bold mb-1 flex items-center justify-center gap-2">
+                                <span className="text-lg">💰</span> Claim Your Bounty
+                            </h4>
+                            <p className="text-[10px] text-emerald-200/70 mb-3uppercase font-bold tracking-widest">Share this intel to earn 10% Protocol Kickback</p>
+                            <code className="text-xs bg-slate-900 px-3 py-2 rounded text-emerald-300/90 select-all border border-emerald-500/20 shadow-inner inline-block w-full overflow-hidden text-ellipsis whitespace-nowrap">
+                                {window.location.origin}{bountyLink}
+                            </code>
+                        </div>
+                    )}
                 </div>
             </div>
 
