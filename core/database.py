@@ -1,6 +1,7 @@
 import sqlite3
 import datetime
 import time
+import os
 from contextlib import contextmanager
 
 DB_PATH = "credits.db"
@@ -149,6 +150,12 @@ def init_db():
              pass
         try:
              cursor.execute("ALTER TABLE audit_reports ADD COLUMN initial_detected_at REAL DEFAULT NULL")
+        except:
+             pass
+
+        # [NEW] Royalty Settlement (Sheriff's Revenue)
+        try:
+             cursor.execute("ALTER TABLE audit_reports ADD COLUMN royalty_claimed_eth REAL DEFAULT 0.0")
         except:
              pass
 

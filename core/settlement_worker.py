@@ -26,8 +26,8 @@ def run_settlement():
     
     reserve_share = 0.0
     if expired_amount > 0:
-        # Calculate Reserve (40%)
-        reserve_share = expired_amount * 0.40
+        # Calculate Reserve (60% Indigo Stream)
+        reserve_share = expired_amount * 0.60
         # Record to Founder Ledger
         database.record_founder_carry(reserve_share, 'settlement')
         print(f"Settlement Executed: {reserve_share} Credits moved to Founder Ledger.")
@@ -42,7 +42,7 @@ def run_settlement():
         "expired_vouchers": expired_amount,
         "reserve_amount": reserve_share,
         "vault_balance": stats['vault_balance_eth'],
-        "carry_balance": stats['total_carry'],
+        "carry_balance": stats.get('founder_carry', 0.0), # Fixed key
         "audit_count": 0, # Placeholder
         "new_users": 0 # Placeholder
     }
